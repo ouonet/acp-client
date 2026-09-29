@@ -135,5 +135,39 @@ describe('T4: ChatViewComponent & Collapsible ThinkingBlock', () => {
         },
       });
     });
+
+    it('should render user message toolbar with fork button and dispatch FORK_SESSION with message index', () => {
+      const chatView = new ChatViewComponent({
+        container,
+        onAction: onActionMock,
+      });
+
+      chatView.setSessionId('sess-turn-1');
+      chatView.renderMessages([
+        { role: 'user', content: 'First prompt turn' },
+        { role: 'assistant', content: 'Assistant turn 1' },
+        { role: 'user', content: 'Second prompt turn' },
+      ]);
+
+      const userRows = container.querySelectorAll('.message-row.user');
+      expect(userRows.length).toBe(2);
+
+      // Verify second user message has fork button
+      const forkBtn = userRows[1].querySelector('.btn-msg-fork') as HTMLButtonElement;
+      expect(forkBtn).not.toBeNull();
+      expect(forkBtn.textContent).toContain('Fork');
+
+      forkBtn.click();
+
+      expect(onActionMock).toHaveBeenCalledWith({
+        type: 'FORK_SESSION',
+        payload: {
+          sourceSessionId: 'sess-turn-1',
+          options: {
+            upToMessageIndex: 2,
+          },
+        },
+      });
+    });
   });
 });

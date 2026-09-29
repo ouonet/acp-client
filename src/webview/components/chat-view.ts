@@ -80,11 +80,29 @@ export class ChatViewComponent {
   private currentAssistantBubble: HTMLElement | null = null;
   private currentThinkingContainer: HTMLElement | null = null;
   private currentRawContent = '';
+  private currentSessionId?: string;
+  private agentConfigs: any[] = [];
+  private processStatuses: Record<string, string> = {};
+  private activeAgentId?: string;
 
   constructor(options: ChatViewOptions) {
     this.container = options.container;
     this.onAction = options.onAction;
     this.bindGlobalEvents();
+  }
+
+  public setSessionId(id: string): void {
+    this.currentSessionId = id;
+  }
+
+  public setAgentContext(
+    configs: any[],
+    statuses: Record<string, string>,
+    activeAgentId?: string
+  ): void {
+    this.agentConfigs = configs || [];
+    this.processStatuses = statuses || {};
+    this.activeAgentId = activeAgentId;
   }
 
   public setMessages(messages: MessageChunk[]): void {
@@ -166,9 +184,68 @@ export class ChatViewComponent {
   public renderMessages(messages: MessageChunk[]): void {
     this.container.innerHTML = '';
 
-    for (const msg of messages) {
+    if (messages.length === 0) {
+      const isRunning = !!this.activeAgentId && this.processStatuses[this.activeAgentId] === 'running';
+      const activeAgent = this.agentConfigs.find((c) => c.id === this.activeAgentId);
+      const agentName = activeAgent?.name || this.activeAgentId || 'ACP Agent';
+
+      const welcome = document.createElement('div');
+      welcome.className = 'chat-welcome-container';
+      welcome.innerHTML = `
+        <div class="welcome-card">
+          <div class="welcome-icon-glow">${ICONS.bolt}</div>
+          <h2 class="welcome-title">${isRunning ? 'Agent Connected' : 'Connect an ACP Agent'}</h2>
+          <p class="welcome-subtitle">
+            ${isRunning
+              ? `Connected to <strong>${escapeHtml(agentName)}</strong>. Ask a question or assign a coding task below.`
+              : 'Select an Agent from your configurations to establish an interactive pair-programming session.'}
+          </p>
+          ${!isRunning && this.agentConfigs.length > 0 ? `
+            <div class="welcome-actions-row">
+              <div class="welcome-select-wrapper">
+                <select class="welcome-agent-select">
+                  ${this.agentConfigs.map((c) => `<option value="${c.id}" ${c.id === this.activeAgentId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('')}
+                </select>
+                <span class="select-chevron">${ICONS.chevronDown}</span>
+              </div>
+              <button class="btn-welcome-connect" type="button">
+                ${ICONS.bolt} <span>Connect Agent</span>
+              </button>
+            </div>
+          ` : ''}
+          ${!isRunning && this.agentConfigs.length === 0 ? `
+            <button class="btn-welcome-config" type="button">
+              ${ICONS.settings} <span>Configure New Agent</span>
+            </button>
+          ` : ''}
+          <div class="welcome-hints">
+            <span>💡 <strong>Tip:</strong> Press <code>/</code> in the input box for skills (/tdd, /review, /design, /plan)</span>
+          </div>
+        </div>
+      `;
+
+      welcome.querySelector('.btn-welcome-connect')?.addEventListener('click', () => {
+        const sel = welcome.querySelector('.welcome-agent-select') as HTMLSelectElement;
+        const agentId = sel?.value || this.activeAgentId || this.agentConfigs[0]?.id || 'default-agent';
+        this.onAction({
+          type: 'CREATE_SESSION',
+          payload: { agentId, title: 'New Session' },
+        });
+      });
+
+      welcome.querySelector('.btn-welcome-config')?.addEventListener('click', () => {
+        this.onAction({ type: 'TOGGLE_CONFIG' });
+      });
+
+      this.container.appendChild(welcome);
+      return;
+    }
+
+    for (let idx = 0; idx < messages.length; idx++) {
+      const msg = messages[idx];
       const row = document.createElement('div');
       row.className = `message-row ${msg.role}`;
+      row.setAttribute('data-msg-index', String(idx));
 
       if (msg.role === 'user') {
         const bubble = document.createElement('div');
@@ -180,6 +257,51 @@ export class ChatViewComponent {
           bubble.innerHTML = this.renderContentBlocks(msg.content);
         }
         row.appendChild(bubble);
+
+        // User message toolbar with Fork & Copy
+        const toolbar = document.createElement('div');
+        toolbar.className = 'user-message-toolbar';
+        toolbar.innerHTML = `
+          <button class="btn-msg-fork" type="button" title="Fork from this message (Branch conversation)" data-index="${idx}">
+            ${ICONS.fork} <span>Fork</span>
+          </button>
+          <button class="btn-msg-copy" type="button" title="Copy prompt text">
+            ${ICONS.copy}
+          </button>
+        `;
+
+        const userText = typeof msg.content === 'string'
+          ? msg.content
+          : (Array.isArray(msg.content)
+              ? msg.content.filter((b) => b.type === 'text').map((b) => (b as any).text).join('')
+              : '');
+
+        toolbar.querySelector('.btn-msg-fork')?.addEventListener('click', () => {
+          if (this.currentSessionId) {
+            this.onAction({
+              type: 'FORK_SESSION',
+              payload: {
+                sourceSessionId: this.currentSessionId,
+                options: {
+                  upToMessageIndex: idx,
+                },
+              },
+            });
+          }
+        });
+
+        toolbar.querySelector('.btn-msg-copy')?.addEventListener('click', () => {
+          navigator.clipboard?.writeText(userText);
+          const copyBtn = toolbar.querySelector('.btn-msg-copy');
+          if (copyBtn) {
+            copyBtn.innerHTML = 'Copied!';
+            setTimeout(() => {
+              copyBtn.innerHTML = ICONS.copy;
+            }, 1500);
+          }
+        });
+
+        row.appendChild(toolbar);
       } else if (msg.role === 'assistant') {
         // 1. Thinking block if present
         if (msg.thinking) {

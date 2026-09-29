@@ -81,7 +81,7 @@ describe('T3: HeaderComponent & UI Shell Controls', () => {
     expect(statusDot?.classList.contains('error')).toBe(true);
   });
 
-  it('should trigger onAction callback when clicking Fork, Config, or History buttons', () => {
+  it('should render agent selector, connection button, and action controls without top fork button', () => {
     const header = new HeaderComponent({
       container,
       onAction: onActionMock,
@@ -98,20 +98,47 @@ describe('T3: HeaderComponent & UI Shell Controls', () => {
         updatedAt: 1000,
       },
       sessions: [],
-      agentConfigs: [],
+      agentConfigs: [
+        {
+          id: 'agent-1',
+          name: 'Claude Agent',
+          command: 'node',
+          args: [],
+          env: {},
+          transport: 'stdio',
+          enabled: true,
+        },
+      ],
       inputHistory: [],
-      processStatuses: {},
+      processStatuses: {
+        'agent-1': 'stopped',
+      },
     });
 
-    const forkBtn = container.querySelector<HTMLButtonElement>('[data-action="fork"]');
-    expect(forkBtn).not.toBeNull();
-    forkBtn?.click();
+    // Top fork button must NOT exist
+    const forkBtn = container.querySelector('[data-action="fork"]');
+    expect(forkBtn).toBeNull();
 
-    expect(onActionMock).toHaveBeenCalledWith({
-      type: 'FORK_SESSION',
-      payload: { sourceSessionId: 'sess-123' },
-    });
+    // Agent selector must exist
+    const agentSelect = container.querySelector('select.header-agent-select') as HTMLSelectElement;
+    expect(agentSelect).not.toBeNull();
+    expect(agentSelect.value).toBe('agent-1');
 
+    // Connect button must exist
+    const connectBtn = container.querySelector('.btn-agent-connection') as HTMLButtonElement;
+    expect(connectBtn).not.toBeNull();
+    expect(connectBtn.textContent).toContain('Connect');
+
+    // Click Connect button
+    connectBtn.click();
+    expect(onActionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'CREATE_SESSION',
+        payload: expect.objectContaining({ agentId: 'agent-1' }),
+      })
+    );
+
+    // Config and History buttons
     const configBtn = container.querySelector<HTMLButtonElement>('[data-action="toggle-config"]');
     configBtn?.click();
     expect(onActionMock).toHaveBeenCalledWith({ type: 'TOGGLE_CONFIG' });

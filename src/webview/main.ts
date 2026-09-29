@@ -242,6 +242,13 @@ export class WebviewApp {
     this.header.update(snapshot);
 
     // 2. Active Session & Messages
+    const activeAgentId = snapshot.activeSession?.agentId || snapshot.agentConfigs[0]?.id;
+    this.chatView.setAgentContext(
+      snapshot.agentConfigs || [],
+      snapshot.processStatuses || {},
+      activeAgentId
+    );
+
     if (snapshot.activeSession) {
       const s = snapshot.activeSession;
       const isRunning = snapshot.processStatuses[s.agentId] === 'running';
@@ -250,8 +257,10 @@ export class WebviewApp {
       this.inputBox.setModel(isRunning ? s.model : undefined);
       this.inputBox.setThinkingLevel(isRunning ? s.thinkingLevel : undefined);
 
+      this.chatView.setSessionId(s.id);
       this.chatView.setMessages(s.messages);
     } else {
+      this.chatView.setSessionId('');
       this.chatView.setMessages([]);
       this.inputBox.setStatus('idle');
       this.inputBox.setSessionId('');

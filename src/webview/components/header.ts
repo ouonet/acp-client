@@ -28,29 +28,56 @@ export class HeaderComponent {
     this.activeSessionId = activeSession?.id;
     this.currentAgentId = activeSession?.agentId;
 
-    const agentConfig = snapshot.agentConfigs.find((c) => c.id === activeSession?.agentId);
-    const agentName = agentConfig?.name || activeSession?.agentId || 'No Agent';
-    const status = (activeSession?.agentId && snapshot.processStatuses[activeSession.agentId]) || 'stopped';
-    const isRunning = !!activeSession?.agentId && status === 'running';
+    const hasConfigs = snapshot.agentConfigs && snapshot.agentConfigs.length > 0;
+    const currentAgent = snapshot.agentConfigs.find((c) => c.id === this.currentAgentId) || snapshot.agentConfigs[0];
+    if (!this.currentAgentId && currentAgent) {
+      this.currentAgentId = currentAgent.id;
+    }
+    const status = (this.currentAgentId && snapshot.processStatuses[this.currentAgentId]) || 'stopped';
+    const isRunning = !!this.currentAgentId && status === 'running';
     const model = isRunning && activeSession?.model ? activeSession.model : null;
     const thinking = isRunning && activeSession?.thinkingLevel ? activeSession.thinkingLevel : null;
 
     this.container.innerHTML = `
       <header class="acp-header">
         <div class="header-left">
-          <div class="agent-status-pill">
-            <span class="status-dot ${status}"></span>
-            <span class="agent-name">${this.escapeHtml(agentName)}</span>
-          </div>
+          ${hasConfigs ? `
+            <div class="agent-selector-wrapper">
+              <span class="status-dot ${status}"></span>
+              <select class="header-agent-select agent-name" title="Select ACP Agent">
+                ${snapshot.agentConfigs.map((c) => `
+                  <option value="${c.id}" ${c.id === this.currentAgentId ? 'selected' : ''}>
+                    ${this.escapeHtml(c.name)}
+                  </option>
+                `).join('')}
+                <option value="__configure__">+ Configure Agents...</option>
+              </select>
+              <span class="select-chevron">${ICONS.chevronDown}</span>
+            </div>
+            <button
+              class="btn-agent-connection ${isRunning ? 'connected' : 'disconnected'}"
+              data-action="${isRunning ? 'disconnect-agent' : 'connect-agent'}"
+              data-agent-id="${this.currentAgentId || ''}"
+              type="button"
+              title="${isRunning ? 'Disconnect / Stop Agent Process' : 'Connect to Agent'}"
+            >
+              ${isRunning ? `${ICONS.stop} <span>Disconnect</span>` : `${ICONS.bolt} <span>Connect</span>`}
+            </button>
+          ` : `
+            <div class="agent-status-pill">
+              <span class="status-dot stopped"></span>
+              <span class="agent-name">No Agent</span>
+            </div>
+            <button class="btn-agent-connection disconnected" data-action="toggle-config" type="button" title="Configure Agent">
+              ${ICONS.settings} <span>Add Agent</span>
+            </button>
+          `}
         </div>
         <div class="header-center">
           ${model ? `<span class="model-badge">${this.escapeHtml(model)}</span>` : ''}
           ${thinking ? `<span class="thinking-badge">${this.escapeHtml(thinking)}</span>` : ''}
         </div>
         <div class="header-right">
-          <button class="icon-btn" data-action="fork" title="Fork Session (Branch Conversation)">
-            ${ICONS.fork}
-          </button>
           <button class="icon-btn" data-action="toggle-config" title="Agent Settings">
             ${ICONS.settings}
           </button>
@@ -79,7 +106,7 @@ export class HeaderComponent {
         <div class="header-left">
           <div class="agent-status-pill">
             <span class="status-dot stopped"></span>
-            <span class="agent-name">Connecting...</span>
+            <span class="agent-name">No Agent</span>
           </div>
         </div>
       </header>
@@ -87,13 +114,38 @@ export class HeaderComponent {
   }
 
   private bindEvents(): void {
-    const forkBtn = this.container.querySelector('[data-action="fork"]');
-    forkBtn?.addEventListener('click', () => {
-      if (this.activeSessionId) {
+    const agentSelect = this.container.querySelector('select.header-agent-select') as HTMLSelectElement;
+    agentSelect?.addEventListener('change', () => {
+      const val = agentSelect.value;
+      if (val === '__configure__') {
+        this.onAction({ type: 'TOGGLE_CONFIG' });
+      } else if (val) {
+        this.currentAgentId = val;
         this.onAction({
-          type: 'FORK_SESSION',
-          payload: { sourceSessionId: this.activeSessionId },
+          type: 'CREATE_SESSION',
+          payload: { agentId: val, title: 'New Session' },
         });
+      }
+    });
+
+    const connBtn = this.container.querySelector('.btn-agent-connection') as HTMLButtonElement;
+    connBtn?.addEventListener('click', () => {
+      const action = connBtn.getAttribute('data-action');
+      if (action === 'connect-agent') {
+        const agentId = this.currentAgentId || 'default-agent';
+        this.onAction({
+          type: 'CREATE_SESSION',
+          payload: { agentId, title: 'New Session' },
+        });
+      } else if (action === 'disconnect-agent') {
+        if (this.currentAgentId) {
+          this.onAction({
+            type: 'STOP_AGENT_PROCESS',
+            payload: { agentId: this.currentAgentId },
+          });
+        }
+      } else if (action === 'toggle-config') {
+        this.onAction({ type: 'TOGGLE_CONFIG' });
       }
     });
 
