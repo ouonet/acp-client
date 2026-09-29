@@ -246,4 +246,33 @@ describe('T2: AcpViewProvider & Unidirectional IPC Bridge', () => {
       cwd: undefined,
     });
   });
+
+  it('should handle TEST_AGENT_CONNECTION and report failure when command is invalid', async () => {
+    provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
+
+    await mockWebview.fireMessage({
+      type: 'TEST_AGENT_CONNECTION',
+      payload: {
+        config: {
+          id: 'test-agent',
+          name: 'Invalid Agent',
+          command: '',
+          args: [],
+          env: {},
+          transport: 'stdio',
+          enabled: true,
+        },
+      },
+    });
+
+    expect(mockWebview.postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'TEST_CONNECTION_RESULT',
+        payload: expect.objectContaining({
+          success: false,
+          error: expect.stringContaining('Command is empty'),
+        }),
+      })
+    );
+  });
 });

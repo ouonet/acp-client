@@ -3,6 +3,7 @@
  * keyboard ↑/↓ history recall, model/thinking selectors, and multimodal attachments.
  */
 
+import type { ProcessStatus } from '../../core/ports';
 import type { SessionStatus, ThinkingLevel } from '../../core/types/session';
 import { ICONS } from './icons';
 
@@ -53,6 +54,7 @@ export class InputBoxComponent {
   private currentModel?: string;
   private thinkingLevel?: ThinkingLevel;
   private status: SessionStatus;
+  private processStatus: ProcessStatus = 'stopped';
   private attachments: AttachmentItem[] = [];
 
   // Slash commands
@@ -177,6 +179,24 @@ export class InputBoxComponent {
     if (this.thinkingLevel) {
       this.thinkingSelect.value = this.thinkingLevel;
     }
+
+    // Intercept programmatic value assignments so button state stays in sync
+    const originalValueDescriptor = Object.getOwnPropertyDescriptor(
+      HTMLTextAreaElement.prototype,
+      'value'
+    );
+    if (originalValueDescriptor) {
+      Object.defineProperty(this.textarea, 'value', {
+        get: () => originalValueDescriptor.get?.call(this.textarea) ?? '',
+        set: (val: string) => {
+          originalValueDescriptor.set?.call(this.textarea, val);
+          this.updateButtonState();
+        },
+        configurable: true,
+      });
+    }
+
+    this.updateButtonState();
   }
 
   private isBusy(): boolean {
@@ -248,10 +268,11 @@ export class InputBoxComponent {
       }
     });
 
-    // Auto-grow textarea & slash commands detection
+    // Auto-grow textarea & slash commands detection & button state
     this.textarea.addEventListener('input', () => {
       this.adjustHeight();
       this.checkSlashCommands();
+      this.updateButtonState();
     });
 
     // Click outside to dismiss slash popup
@@ -303,7 +324,7 @@ export class InputBoxComponent {
 
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (!this.isBusy()) {
+        if (!this.isBusy() && this.hasContent() && this.processStatus !== 'starting') {
           this.submit();
         }
         return;
@@ -345,7 +366,7 @@ export class InputBoxComponent {
     this.toggleButton.addEventListener('click', () => {
       if (this.isBusy()) {
         this.options.onCancel(this.sessionId);
-      } else {
+      } else if (this.hasContent() && this.processStatus !== 'starting') {
         this.submit();
       }
     });
@@ -454,11 +475,13 @@ export class InputBoxComponent {
   public addAttachment(attachment: AttachmentItem): void {
     this.attachments.push(attachment);
     this.renderAttachments();
+    this.updateButtonState();
   }
 
   public removeAttachment(id: string): void {
     this.attachments = this.attachments.filter((a) => a.id !== id);
     this.renderAttachments();
+    this.updateButtonState();
   }
 
   private renderAttachments(): void {
@@ -504,23 +527,54 @@ export class InputBoxComponent {
     this.renderAttachments();
     this.textarea.style.height = '36px';
     this.textarea.style.overflowY = 'hidden';
+    this.updateButtonState();
+  }
+
+  public setProcessStatus(status: ProcessStatus): void {
+    this.processStatus = status;
+    this.updateButtonState();
+  }
+
+  public hasContent(): boolean {
+    return !!(this.textarea && this.textarea.value.trim().length > 0) || this.attachments.length > 0;
+  }
+
+  public updateButtonState(): void {
+    if (!this.toggleButton) return;
+    const busy = this.isBusy();
+
+    if (busy) {
+      this.toggleButton.disabled = false;
+      this.toggleButton.classList.remove('send', 'connecting', 'disabled');
+      this.toggleButton.classList.add('stop');
+      this.toggleButton.innerHTML = `${ICONS.stop} <span>Stop</span>`;
+      this.toggleButton.title = 'Stop agent generation (Escape)';
+    } else if (this.processStatus === 'starting') {
+      this.toggleButton.disabled = true;
+      this.toggleButton.classList.remove('send', 'stop');
+      this.toggleButton.classList.add('connecting', 'disabled');
+      this.toggleButton.innerHTML = `${ICONS.spinner} <span>Connecting...</span>`;
+      this.toggleButton.title = 'Agent process is starting...';
+    } else {
+      this.toggleButton.classList.remove('stop', 'connecting');
+      this.toggleButton.classList.add('send');
+      this.toggleButton.innerHTML = `${ICONS.send} <span>Send</span>`;
+
+      const canSend = this.hasContent();
+      this.toggleButton.disabled = !canSend;
+      if (canSend) {
+        this.toggleButton.classList.remove('disabled');
+        this.toggleButton.title = 'Send prompt (Enter)';
+      } else {
+        this.toggleButton.classList.add('disabled');
+        this.toggleButton.title = 'Please enter a message or attach a file';
+      }
+    }
   }
 
   public setStatus(status: SessionStatus): void {
     this.status = status;
-    const busy = this.isBusy();
-
-    if (busy) {
-      this.toggleButton.classList.remove('send');
-      this.toggleButton.classList.add('stop');
-      this.toggleButton.innerHTML = `${ICONS.stop} <span>Stop</span>`;
-      this.toggleButton.title = 'Stop agent generation';
-    } else {
-      this.toggleButton.classList.remove('stop');
-      this.toggleButton.classList.add('send');
-      this.toggleButton.innerHTML = `${ICONS.send} <span>Send</span>`;
-      this.toggleButton.title = 'Send prompt';
-    }
+    this.updateButtonState();
   }
 
   public setSessionId(id: string): void {

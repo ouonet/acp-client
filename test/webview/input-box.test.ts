@@ -91,6 +91,7 @@ describe('T5: InputBoxComponent (Ergonomics, Dynamic Toggle, History, Multimodal
       textarea.value = '   ';
       button.click();
       expect(onSendMock).not.toHaveBeenCalled();
+      expect(button.disabled).toBe(true);
 
       // Shift + Enter should not send
       textarea.value = 'Multi\nline';
@@ -98,6 +99,58 @@ describe('T5: InputBoxComponent (Ergonomics, Dynamic Toggle, History, Multimodal
         new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true })
       );
       expect(onSendMock).not.toHaveBeenCalled();
+    });
+
+    it('should disable Send button when empty and enable when text or attachment added', () => {
+      const inputBox = new InputBoxComponent(defaultProps);
+      const textarea = container.querySelector('textarea.prompt-input') as HTMLTextAreaElement;
+      const button = container.querySelector('.btn-toggle-action') as HTMLButtonElement;
+
+      // Initially empty -> disabled
+      expect(button.disabled).toBe(true);
+      expect(button.classList.contains('disabled')).toBe(true);
+
+      // Typing text -> enabled
+      textarea.value = 'Hello';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(button.disabled).toBe(false);
+      expect(button.classList.contains('disabled')).toBe(false);
+
+      // Clear text -> disabled again
+      textarea.value = '';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(button.disabled).toBe(true);
+
+      // Add attachment without text -> enabled
+      inputBox.addAttachment({
+        id: 'att-1',
+        type: 'image',
+        mimeType: 'image/png',
+        data: 'abc',
+        name: 'test.png',
+      });
+      expect(button.disabled).toBe(false);
+
+      // Remove attachment -> disabled
+      inputBox.removeAttachment('att-1');
+      expect(button.disabled).toBe(true);
+    });
+
+    it('should disable button and show Connecting... when process status is starting', () => {
+      const inputBox = new InputBoxComponent(defaultProps);
+      const textarea = container.querySelector('textarea.prompt-input') as HTMLTextAreaElement;
+      const button = container.querySelector('.btn-toggle-action') as HTMLButtonElement;
+
+      textarea.value = 'Some message';
+      expect(button.disabled).toBe(false);
+
+      inputBox.setProcessStatus('starting');
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toContain('Connecting');
+
+      inputBox.setProcessStatus('running');
+      expect(button.disabled).toBe(false);
+      expect(button.textContent).toContain('Send');
     });
 
     it('should switch to Stop button when status is streaming or waiting_approval and dispatch onCancel', () => {

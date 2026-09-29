@@ -212,11 +212,13 @@ export class WebviewApp {
         if (this.currentSnapshot) {
           this.currentSnapshot.processStatuses[agentId] = status as any;
           this.header.update(this.currentSnapshot);
-          if (this.currentSnapshot.activeSession?.agentId === agentId) {
+          const activeAgentId = this.currentSnapshot.activeSession?.agentId || this.currentSnapshot.agentConfigs[0]?.id;
+          if (activeAgentId === agentId) {
+            this.inputBox.setProcessStatus(status as any);
             const isRunning = status === 'running';
-            this.inputBox.setModel(isRunning ? this.currentSnapshot.activeSession.model : undefined);
+            this.inputBox.setModel(isRunning ? this.currentSnapshot.activeSession?.model : undefined);
             this.inputBox.setThinkingLevel(
-              isRunning ? this.currentSnapshot.activeSession.thinkingLevel : undefined
+              isRunning ? this.currentSnapshot.activeSession?.thinkingLevel : undefined
             );
           }
         }
@@ -248,6 +250,9 @@ export class WebviewApp {
       snapshot.processStatuses || {},
       activeAgentId
     );
+
+    const currentAgentStatus = activeAgentId ? snapshot.processStatuses[activeAgentId] || 'stopped' : 'stopped';
+    this.inputBox.setProcessStatus(currentAgentStatus as any);
 
     if (snapshot.activeSession) {
       const s = snapshot.activeSession;

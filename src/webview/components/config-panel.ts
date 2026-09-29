@@ -28,6 +28,7 @@ export class ConfigPanelComponent {
   private configs: AgentConfig[];
   private activeConfigId: string;
   private pingResultBox: HTMLElement | null = null;
+  private testState: { isTesting: boolean; result?: TestResultData } = { isTesting: false };
 
   constructor(options: ConfigPanelOptions) {
     this.container = options.container;
@@ -36,11 +37,11 @@ export class ConfigPanelComponent {
       ? [...options.configs]
       : [
           {
-            id: 'default-agent',
-            name: 'Default Agent',
+            id: 'claude-code',
+            name: 'Claude Code',
             transport: 'stdio',
             command: 'npx',
-            args: ['@agentclientprotocol/claude-agent-acp'],
+            args: ['-y', '@agentclientprotocol/claude-agent-acp'],
             env: {},
             enabled: true,
           },
@@ -51,32 +52,89 @@ export class ConfigPanelComponent {
   }
 
   public setConfigs(configs: AgentConfig[], activeId?: string): void {
+    const isDrawerOpen = this.container.style.display === 'flex' || this.container.style.display === 'block';
+    const sameActiveId = activeId ? this.activeConfigId === activeId : true;
+
     this.configs = [...configs];
     if (activeId) {
       this.activeConfigId = activeId;
     } else if (!this.configs.some((c) => c.id === this.activeConfigId)) {
       this.activeConfigId = this.configs[0]?.id || '';
     }
+
+    // If drawer is currently open and active config didn't change, avoid clobbering user form input
+    if (isDrawerOpen && sameActiveId) {
+      return;
+    }
+
     this.render();
   }
 
   public showTestResult(result: TestResultData): void {
+    this.testState = { isTesting: false, result };
+    this.updatePingUI();
+  }
+
+  private updatePingUI(): void {
+    const pingBtn = this.container.querySelector('.btn-ping') as HTMLButtonElement | null;
+    this.pingResultBox = this.container.querySelector('.ping-result');
     if (!this.pingResultBox) return;
 
-    if (result.success) {
-      this.pingResultBox.className = 'ping-result success';
+    if (this.testState.isTesting) {
+      if (pingBtn) {
+        pingBtn.disabled = true;
+        pingBtn.innerHTML = `${ICONS.spinner} <span>Testing Connection...</span>`;
+      }
+      this.pingResultBox.className = 'ping-result testing';
+      this.pingResultBox.style.display = 'block';
       this.pingResultBox.innerHTML = `
-        <span class="status-indicator">●</span>
-        <strong>Connected (${result.durationMs}ms)</strong>
-        ${result.protocolVersion ? `<span>Protocol v${result.protocolVersion}</span>` : ''}
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+          ${ICONS.spinner} <span>Probing Agent process and ACP handshake...</span>
+        </span>
       `;
+    } else if (this.testState.result) {
+      if (pingBtn) {
+        pingBtn.disabled = false;
+        pingBtn.innerHTML = `${ICONS.bolt} <span>Test Connection (Ping)</span>`;
+      }
+      const res = this.testState.result;
+      if (res.success) {
+        this.pingResultBox.className = 'ping-result success';
+        this.pingResultBox.style.display = 'flex';
+        this.pingResultBox.innerHTML = `
+          <span class="status-indicator">●</span>
+          <div class="ping-success-info">
+            <strong>Connected (${res.durationMs}ms)</strong>
+            ${res.protocolVersion ? `<span>Protocol v${res.protocolVersion}</span>` : ''}
+          </div>
+        `;
+      } else {
+        this.pingResultBox.className = 'ping-result error';
+        this.pingResultBox.style.display = 'flex';
+        this.pingResultBox.innerHTML = `
+          <div class="ping-error-header" style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-indicator status-error">●</span>
+            <strong>Connection Failed (${res.durationMs}ms)</strong>
+          </div>
+          <div class="ping-error-detail" style="white-space: pre-wrap; font-family: var(--font-code); font-size: 11px; margin-top: 4px;">${this.escapeHtml(res.error || 'Unknown error')}</div>
+          <div style="margin-top: 8px;">
+            <button type="button" class="btn-view-log-link" style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-subtle); background: var(--card-bg); color: var(--fg-primary);">
+              ${ICONS.terminal} <span>View Output Log</span>
+            </button>
+          </div>
+        `;
+        this.pingResultBox.querySelector('.btn-view-log-link')?.addEventListener('click', () => {
+          this.options.onAction({ type: 'SHOW_OUTPUT' });
+        });
+      }
     } else {
-      this.pingResultBox.className = 'ping-result error';
-      this.pingResultBox.innerHTML = `
-        <span class="status-indicator status-error">●</span>
-        <strong>Connection Failed (${result.durationMs}ms)</strong>
-        <div class="ping-error-detail">${result.error || 'Unknown error'}</div>
-      `;
+      if (pingBtn) {
+        pingBtn.disabled = false;
+        pingBtn.innerHTML = `${ICONS.bolt} <span>Test Connection (Ping)</span>`;
+      }
+      this.pingResultBox.className = 'ping-result';
+      this.pingResultBox.style.display = 'none';
+      this.pingResultBox.innerHTML = '';
     }
   }
 
@@ -119,16 +177,34 @@ export class ConfigPanelComponent {
       autoApprove.push((box as HTMLInputElement).value);
     });
 
+    const rawArgs = argsInput?.value?.trim() || '';
+    let parsedArgs: string[] = [];
+    if (rawArgs.includes(',')) {
+      parsedArgs = rawArgs.split(',').map((s) => s.trim()).filter(Boolean);
+    } else if (rawArgs) {
+      const matches = rawArgs.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g);
+      parsedArgs = matches ? matches.map((m) => m.replace(/^['"]|['"]$/g, '')) : [];
+    }
+
     return {
       ...current,
       name: nameInput?.value || current.name,
       transport: (transportSelect?.value as 'stdio' | 'websocket') || current.transport,
       command: commandInput?.value || '',
-      args: argsInput?.value ? argsInput.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      args: parsedArgs,
       cwd: cwdInput?.value ? cwdInput.value.trim() : undefined,
       env,
       autoApprove: autoApprove.length > 0 ? autoApprove : undefined,
     };
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   private render(): void {
@@ -238,12 +314,14 @@ export class ConfigPanelComponent {
     this.pingResultBox = this.container.querySelector('.ping-result');
 
     this.bindEvents();
+    this.updatePingUI();
   }
 
   private bindEvents(): void {
     // Close Drawer
     const closeBtn = this.container.querySelector('.drawer-close-btn');
     closeBtn?.addEventListener('click', () => {
+      this.testState = { isTesting: false };
       this.options.onClose();
     });
 
@@ -254,6 +332,7 @@ export class ConfigPanelComponent {
         const id = (btn as HTMLElement).getAttribute('data-agent-id');
         if (id && id !== this.activeConfigId) {
           this.activeConfigId = id;
+          this.testState = { isTesting: false };
           this.render();
         }
       });
@@ -274,6 +353,7 @@ export class ConfigPanelComponent {
       };
       this.configs.push(newConfig);
       this.activeConfigId = newId;
+      this.testState = { isTesting: false };
       this.render();
     });
 
@@ -308,10 +388,8 @@ export class ConfigPanelComponent {
     const pingBtn = this.container.querySelector('.btn-ping');
     pingBtn?.addEventListener('click', () => {
       const updated = this.readFormConfig();
-      if (this.pingResultBox) {
-        this.pingResultBox.className = 'ping-result testing';
-        this.pingResultBox.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 6px;">${ICONS.spinner} <span>Probing Agent process...</span></span>`;
-      }
+      this.testState = { isTesting: true };
+      this.updatePingUI();
       this.options.onAction({
         type: 'TEST_AGENT_CONNECTION',
         payload: {

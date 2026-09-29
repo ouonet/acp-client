@@ -775,6 +775,22 @@ textarea.prompt-input {
   background: var(--accent-hover);
 }
 
+.btn-toggle-action.send:disabled,
+.btn-toggle-action.send.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+
+.btn-toggle-action.connecting {
+  background: var(--card-bg);
+  color: var(--fg-muted);
+  border: 1px solid var(--border-subtle);
+  cursor: wait;
+  pointer-events: none;
+}
+
 .btn-toggle-action.stop {
   background: var(--status-error);
   color: #fff;

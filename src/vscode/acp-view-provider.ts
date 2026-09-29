@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as os from 'os';
+import { spawn, type ChildProcess } from 'node:child_process';
 import type { ISessionHub } from '../core/session/session-hub';
 import type { IProcessPort, IStoragePort, IWorkspacePort, Disposable } from '../core/ports';
 import { AcpClientAdapter } from '../core/protocol/acp-client-adapter';
@@ -352,36 +353,125 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
 
   private async testAgentConnection(config: AgentConfig): Promise<void> {
     const startTime = Date.now();
-    this.log(`Testing connection for agent: ${config.name} (${config.command} ${(config.args || []).join(' ')})`);
+    this.log(`[Test Connection] Starting probe for agent: "${config.name}" (${config.command} ${(config.args || []).join(' ')})`);
+
+    // Prepare augmented PATH for macOS/Linux GUI environments
+    const isWindows = process.platform === 'win32';
+    const env = { ...process.env, ...config.env };
+    if (process.platform === 'darwin' || process.platform === 'linux') {
+      const extraPaths = [
+        '/opt/homebrew/bin',
+        '/opt/homebrew/sbin',
+        '/usr/local/bin',
+        '/usr/bin',
+        '/bin',
+        '/usr/sbin',
+        '/sbin',
+        process.env.HOME ? `${process.env.HOME}/.nvm/current/bin` : '',
+        process.env.HOME ? `${process.env.HOME}/.cargo/bin` : '',
+        process.env.HOME ? `${process.env.HOME}/.local/bin` : '',
+      ].filter(Boolean);
+      const currentPaths = (env.PATH || '').split(':');
+      for (const p of extraPaths) {
+        if (!currentPaths.includes(p)) {
+          currentPaths.unshift(p);
+        }
+      }
+      env.PATH = currentPaths.join(':');
+    }
+
+    let child: ChildProcess | null = null;
+    let stderrBuffer = '';
+    const cwd = config.cwd || (vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd());
+
     try {
-      const proc = await this.processManager.start(config);
-      this.log(`Process spawned (PID: ${proc.pid}). Testing ACP handshake...`);
+      if (!config.command || !config.command.trim()) {
+        throw new Error('Command is empty. Please enter an executable command (e.g. npx).');
+      }
 
-      const adapter = new AcpClientAdapter({
-        input: proc.stdout,
-        output: proc.stdin,
-        clientInfo: { name: 'vscode-acp-client-test', version: '0.1.0' },
+      child = spawn(config.command, config.args || [], {
+        env,
+        cwd,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: isWindows,
       });
-      const initResult = await adapter.initialize();
-      const durationMs = Date.now() - startTime;
-      this.log(`ACP handshake success (Protocol v${initResult.protocolVersion}) in ${durationMs}ms`);
 
-      await this.processManager.stop(config.id, true).catch(() => {});
+      this.log(`[Test Connection] Spawned probe process (PID: ${child.pid})`);
+
+      child.stderr?.on('data', (chunk: Buffer) => {
+        const text = chunk.toString();
+        stderrBuffer = (stderrBuffer + text).slice(-4096);
+        this.log(`[Test Connection STDERR] ${text.trim()}`);
+      });
+
+      child.stdout?.on('data', (chunk: Buffer) => {
+        this.log(`[Test Connection STDOUT] ${chunk.toString().trim()}`);
+      });
+
+      // Wrap ACP handshake with probe logic
+      const probePromise = new Promise<{ protocolVersion?: number; capabilities?: any }>((resolve, reject) => {
+        if (!child || !child.stdout || !child.stdin) {
+          return reject(new Error('Failed to open stdio streams to process'));
+        }
+
+        const adapter = new AcpClientAdapter({
+          input: child.stdout,
+          output: child.stdin,
+          clientInfo: { name: 'vscode-acp-client-test', version: '0.1.0' },
+        });
+
+        child.on('error', (err: Error) => {
+          reject(new Error(`Failed to spawn "${config.command}": ${err.message}`));
+        });
+
+        child.on('exit', (code: number | null) => {
+          if (code !== 0 && code !== null) {
+            const errDetail = stderrBuffer.trim() ? `: ${stderrBuffer.trim()}` : '';
+            reject(new Error(`Process exited prematurely with code ${code}${errDetail}`));
+          }
+        });
+
+        adapter
+          .initialize()
+          .then((initResult) => {
+            resolve({
+              protocolVersion: initResult.protocolVersion,
+              capabilities: initResult.agentCapabilities,
+            });
+          })
+          .catch((err) => {
+            reject(err);
+          });
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          const errDetail = stderrBuffer.trim() ? ` (stderr: ${stderrBuffer.trim()})` : '';
+          reject(new Error(`Connection test timed out after 8s${errDetail}`));
+        }, 8000);
+      });
+
+      const result = await Promise.race([probePromise, timeoutPromise]);
+      const durationMs = Date.now() - startTime;
+      this.log(`[Test Connection] Handshake successful in ${durationMs}ms (Protocol v${result.protocolVersion || 1})`);
 
       await this.postMessage({
         type: 'TEST_CONNECTION_RESULT',
         payload: {
           success: true,
-          protocolVersion: initResult.protocolVersion,
-          capabilities: initResult.agentCapabilities,
+          protocolVersion: result.protocolVersion,
+          capabilities: result.capabilities,
           durationMs,
         },
       });
     } catch (err: any) {
       const durationMs = Date.now() - startTime;
-      const errMsg = err?.message || 'Connection test failed';
-      this.log(`Connection test failed in ${durationMs}ms: ${errMsg}`);
-      await this.processManager.stop(config.id, true).catch(() => {});
+      let errMsg = err?.message || 'Connection test failed';
+      if (stderrBuffer.trim() && !errMsg.includes(stderrBuffer.trim())) {
+        errMsg += `\n${stderrBuffer.trim()}`;
+      }
+      this.log(`[Test Connection] Failed in ${durationMs}ms: ${errMsg}`);
+
       await this.postMessage({
         type: 'TEST_CONNECTION_RESULT',
         payload: {
@@ -390,6 +480,23 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
           durationMs,
         },
       });
+    } finally {
+      if (child && !child.killed) {
+        try {
+          child.kill('SIGTERM');
+          setTimeout(() => {
+            try {
+              if (child && !child.killed) {
+                child.kill('SIGKILL');
+              }
+            } catch {
+              // ignore
+            }
+          }, 1000);
+        } catch {
+          // ignore
+        }
+      }
     }
   }
 
