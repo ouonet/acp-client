@@ -17,7 +17,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx tsc --noEmit` passes with zero type errors under strict mode.
   spec: docs/staging/specs/2026-09-29-acp-client.md#contracts
 
-- [ ] T3: Atomic Storage Manager & History Ring Buffer
+- [x] T3: Atomic Storage Manager & History Ring Buffer
   goal: Implement StorageManager with atomic file persistence (.tmp -> rename), session serialization, and deduplicating prompt history ring buffer.
   files: src/core/storage/storage-manager.ts, test/core/storage-manager.test.ts
   acceptance: `npx vitest run test/core/storage-manager.test.ts` passes all tests covering atomic writes, corrupted file recovery, and input history bounds.

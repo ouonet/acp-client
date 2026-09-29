@@ -9,3 +9,4 @@ export * from './core/types/config';
 export * from './core/types/session';
 export * from './core/errors';
 export * from './core/ports';
+export * from './core/storage/storage-manager';
