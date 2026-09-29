@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-29 - Milestone M3 (Diff Review, Permissions, MCP Inspector, Skills & Chat Participant)
+
+### Added
+- **Interactive Line-Level Diff Viewer & VS Code Diff Editor Integration**:
+  - `DiffViewerComponent` in Webview SPA rendering unified diffs with line-by-line syntax coloring, addition/deletion tallies (`+x / -y`), and action buttons.
+  - Dual action modes: `[Accept All]` to immediately overwrite file on disk via `IWorkspacePort`, and `[Open in VS Code Diff Editor]` opening a native side-by-side comparison tab (`vscode.diff`).
+- **Three-Tier Permission Policy Gate & Session Whitelisting**:
+  - Fine-grained approval dialog for high-risk Agent tool calls (`run_command`, `write_file`) with three user options: `allow_once` (single execution), `always_allow_session` (session-level whitelist), and `deny` (with reason feedback).
+  - Session-scoped whitelist automatically approves subsequent executions of trusted tools, preventing disruptive permission dialogs while maintaining high security.
+- **Visual MCP Server & Tool Inspector Drawer**:
+  - `McpInspectorComponent` sliding drawer accessible via top context capsule `[ 🔌 x MCP (y Tools) ▾ ]`.
+  - Comprehensive inspection of configured MCP servers, connection latency, transport protocol, and discovered tool schemas with parameter signatures.
+  - Per-tool enable/disable toggle switches that dynamically filter tools exposed to the Agent session.
+- **Workspace Skill Discovery & Slash Command Autocomplete (`/`)**:
+  - `SkillDiscovery` scanning `.agents/skills/` and `.skills/` for `SKILL.md` with YAML frontmatter or title headers.
+  - Floating slash commands menu popup in `InputBoxComponent` triggering on `/` with keyboard navigation (`↑`/`↓`/`Enter`/`Tab`/`Esc`) and instant search filtering.
+  - Built-in slash commands (`/clear`, `/tdd`, `/review`, `/design`, `/plan`) and auto-injected workspace skills.
+- **VS Code Native Chat Participant Bridge (`@acp`)**:
+  - Registered `@acp` in native VS Code Chat sidebar (`contributes.chatParticipants`).
+  - Seamless delegation to `SessionHub` with real-time response chunk streaming via `vscode.ChatResponseStream`.
+  - Slash command sub-handlers for `/clear` (new session) and `/fork` (branching current active session).
+
 ## [0.2.0] - 2026-09-29 - Milestone M2 (Webview Cockpit & Visual Configuration UI)
 
 ### Added

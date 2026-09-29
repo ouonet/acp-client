@@ -35,7 +35,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/vscode/chat-participant.test.ts` passes; chat participant delegates to active SessionHub session and streams response.
   spec: docs/staging/specs/2026-09-29-acp-client.md#solution-matrix-for-m1-m3
 
-- [ ] T6: Full Milestone M3 Bundling, Integration Suite & Production Verification
+- [x] T6: Full Milestone M3 Bundling, Integration Suite & Production Verification
   goal: Bundle production assets, execute full test suite across all 18+ test suites, ensure zero lint errors, and document M3 in CHANGELOG.
   files: scripts/build.mjs, CHANGELOG.md, docs/ROADMAP.md
   acceptance: `npm run build && npm test && npm run lint` succeeds with 100% green coverage; production bundles verified.
