@@ -11,7 +11,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npm install && npm test` runs cleanly with exit code 0; `npm run lint` passes.
   spec: docs/staging/specs/2026-09-29-acp-client.md#conventions
 
-- [ ] T2: Core Domain Models, Errors & Ports Definition
+- [x] T2: Core Domain Models, Errors & Ports Definition
   goal: Define strict TypeScript domain models, state enums, ports (IProcessPort, ITransportPort, IWorkspacePort, IStoragePort), and custom error classes.
   files: src/core/types/config.ts, src/core/types/session.ts, src/core/ports/index.ts, src/core/errors/index.ts
   acceptance: `npx tsc --noEmit` passes with zero type errors under strict mode.

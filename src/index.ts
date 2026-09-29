@@ -2,4 +2,10 @@
  * VS Code ACP Client Extension
  * Core Engine Entry Point
  */
+
 export const VERSION = '0.1.0';
+
+export * from './core/types/config';
+export * from './core/types/session';
+export * from './core/errors';
+export * from './core/ports';
