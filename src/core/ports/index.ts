@@ -18,12 +18,15 @@ export interface ProcessStatusEvent {
   error?: string;
 }
 
+export type ProcessLogCallback = (agentId: string, text: string, stream: 'stdout' | 'stderr' | 'system') => void;
+
 export interface IProcessPort {
   start(config: AgentConfig): Promise<{ pid: number; stdin: NodeJS.WritableStream; stdout: NodeJS.ReadableStream; stderr: NodeJS.ReadableStream }>;
   stop(agentId: string, force?: boolean): Promise<void>;
   restart(agentId: string): Promise<{ pid: number }>;
   getStatus(agentId: string): ProcessStatus;
   onStatusChange(listener: (event: ProcessStatusEvent) => void): Disposable;
+  onLog?(listener: ProcessLogCallback): Disposable;
   dispose(): Promise<void>;
 }
 

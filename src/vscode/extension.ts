@@ -18,10 +18,25 @@ let viewProvider: AcpViewProvider | undefined;
 let chatParticipant: AcpChatParticipant | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+  const outputChannel = vscode.window.createOutputChannel('ACP Client');
+  context.subscriptions.push(outputChannel);
+  outputChannel.appendLine(`[${new Date().toISOString()}] [ACP Client] Extension activated.`);
+
   const storageDir = context.globalStorageUri.fsPath;
   const storageManager = new StorageManager(storageDir);
   processManager = new ProcessManager();
   const workspaceAdapter = new VsCodeWorkspaceAdapter();
+
+  processManager.onLog((agentId, text, stream) => {
+    const timestamp = new Date().toISOString();
+    const prefix = `[${timestamp}] [${agentId}] [${stream.toUpperCase()}]`;
+    const lines = text.split('\n');
+    for (const line of lines) {
+      if (line.trim()) {
+        outputChannel.appendLine(`${prefix} ${line}`);
+      }
+    }
+  });
 
   const activeAdapters = new Map<string, AcpClientAdapter>();
 
@@ -36,6 +51,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (!config) {
           throw new Error(`Agent configuration not found for id: ${agentId}`);
         }
+        outputChannel.appendLine(
+          `[${new Date().toISOString()}] [ACP Client] Launching agent "${config.name}" (${config.command} ${(config.args || []).join(' ')})...`
+        );
         const proc = await processManager!.start(config);
         adapter = new AcpClientAdapter({
           input: proc.stdout,
@@ -45,6 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
           onWriteTextFile: (path, content) => workspaceAdapter.writeFile(path, content),
         });
         await adapter.initialize();
+        outputChannel.appendLine(`[${new Date().toISOString()}] [ACP Client] Agent "${config.name}" connected and initialized successfully.`);
         activeAdapters.set(agentId, adapter);
       }
       return adapter;
@@ -57,6 +76,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     processManager,
     storageManager,
     workspaceAdapter,
+    outputChannel,
   });
 
   chatParticipant = new AcpChatParticipant({
@@ -78,9 +98,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
+    vscode.commands.registerCommand('acpClient.showOutput', () => {
+      outputChannel.show(true);
+    })
+  );
+
+  context.subscriptions.push(
     vscode.commands.registerCommand('acpClient.newSession', async () => {
       const configs = await storageManager.getAgentConfigs();
-      const defaultAgent = configs[0]?.id || 'default-agent';
+      const defaultAgent = configs[0]?.id || 'claude-code';
       await sessionHub!.createSession(defaultAgent, 'New Session');
     })
   );
@@ -94,19 +120,29 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     })
   );
 
-  // Initialize with a default agent config if storage is empty
+  // Clean up any old Gemini config that was previously saved
   const existingConfigs = await storageManager.getAgentConfigs();
-  if (existingConfigs.length === 0) {
+  const cleanedConfigs = existingConfigs.filter(
+    (c) => c.id !== 'default-gemini' && !c.name.toLowerCase().includes('gemini')
+  );
+  if (cleanedConfigs.length !== existingConfigs.length) {
+    await storageManager.saveAgentConfigs(cleanedConfigs);
+    outputChannel.appendLine(`[${new Date().toISOString()}] [ACP Client] Removed deprecated Gemini configuration.`);
+  }
+
+  // Initialize with Claude Code CLI (Zed-compliant ACP Agent) if storage is empty
+  if (cleanedConfigs.length === 0) {
     const sampleConfig: AgentConfig = {
-      id: 'default-gemini',
-      name: 'Gemini CLI Agent',
+      id: 'claude-code',
+      name: 'Claude Code CLI',
       command: 'npx',
-      args: ['@google/gemini-cli', 'acp'],
+      args: ['@agentclientprotocol/claude-agent-acp'],
       env: {},
       transport: 'stdio',
       enabled: true,
     };
     await storageManager.saveAgentConfigs([sampleConfig]);
+    outputChannel.appendLine(`[${new Date().toISOString()}] [ACP Client] Initialized default Claude Code ACP agent configuration.`);
   }
 }
 

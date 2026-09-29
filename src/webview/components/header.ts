@@ -30,11 +30,14 @@ export class HeaderComponent {
 
     const hasConfigs = snapshot.agentConfigs && snapshot.agentConfigs.length > 0;
     const currentAgent = snapshot.agentConfigs.find((c) => c.id === this.currentAgentId) || snapshot.agentConfigs[0];
-    if (!this.currentAgentId && currentAgent) {
+    if (currentAgent) {
       this.currentAgentId = currentAgent.id;
+    } else {
+      this.currentAgentId = undefined;
     }
     const status = (this.currentAgentId && snapshot.processStatuses[this.currentAgentId]) || 'stopped';
     const isRunning = !!this.currentAgentId && status === 'running';
+    const isStarting = !!this.currentAgentId && status === 'starting';
     const model = isRunning && activeSession?.model ? activeSession.model : null;
     const thinking = isRunning && activeSession?.thinkingLevel ? activeSession.thinkingLevel : null;
 
@@ -61,7 +64,7 @@ export class HeaderComponent {
               type="button"
               title="${isRunning ? 'Disconnect / Stop Agent Process' : 'Connect to Agent'}"
             >
-              ${isRunning ? `${ICONS.stop} <span>Disconnect</span>` : `${ICONS.bolt} <span>Connect</span>`}
+              ${isRunning ? `${ICONS.stop} <span>Disconnect</span>` : isStarting ? `${ICONS.spinner} <span>Connecting...</span>` : `${ICONS.bolt} <span>Connect</span>`}
             </button>
           ` : `
             <div class="agent-status-pill">
@@ -78,6 +81,9 @@ export class HeaderComponent {
           ${thinking ? `<span class="thinking-badge">${this.escapeHtml(thinking)}</span>` : ''}
         </div>
         <div class="header-right">
+          <button class="icon-btn" data-action="show-output" title="View ACP Output Channel Logs">
+            ${ICONS.terminal}
+          </button>
           <button class="icon-btn" data-action="toggle-config" title="Agent Settings">
             ${ICONS.settings}
           </button>
@@ -132,7 +138,11 @@ export class HeaderComponent {
     connBtn?.addEventListener('click', () => {
       const action = connBtn.getAttribute('data-action');
       if (action === 'connect-agent') {
-        const agentId = this.currentAgentId || 'default-agent';
+        const agentId = this.currentAgentId;
+        if (!agentId) {
+          this.onAction({ type: 'TOGGLE_CONFIG' });
+          return;
+        }
         this.onAction({
           type: 'CREATE_SESSION',
           payload: { agentId, title: 'New Session' },
@@ -149,7 +159,12 @@ export class HeaderComponent {
       }
     });
 
-    const configBtn = this.container.querySelector('[data-action="toggle-config"]');
+    const outputBtn = this.container.querySelector('[data-action="show-output"]');
+    outputBtn?.addEventListener('click', () => {
+      this.onAction({ type: 'SHOW_OUTPUT' });
+    });
+
+    const configBtn = this.container.querySelector('.header-right [data-action="toggle-config"]');
     configBtn?.addEventListener('click', () => {
       this.onAction({ type: 'TOGGLE_CONFIG' });
     });

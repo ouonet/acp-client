@@ -141,10 +141,22 @@ export class AcpClientAdapter {
       ...capabilities,
     };
 
-    const result = (await this.connection!.agent.request(acp.methods.agent.initialize, {
+    const initPromise = this.connection!.agent.request(acp.methods.agent.initialize, {
       protocolVersion: versionToRequest,
       clientCapabilities,
-    })) as { protocolVersion: number; agentCapabilities?: any };
+    }) as Promise<{ protocolVersion: number; agentCapabilities?: any }>;
+
+    const timeoutPromise = new Promise<{ protocolVersion: number; agentCapabilities?: any }>((_, reject) => {
+      setTimeout(() => {
+        reject(
+          new Error(
+            'ACP agent initialization timed out after 10000ms. The process started but did not complete the ACP JSON-RPC handshake. Check the Output panel for process logs.'
+          )
+        );
+      }, 10000);
+    });
+
+    const result = await Promise.race([initPromise, timeoutPromise]);
 
     this.protocolVersion = result.protocolVersion;
     this.agentCapabilities = result.agentCapabilities;

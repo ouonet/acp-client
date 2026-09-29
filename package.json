@@ -50,6 +50,11 @@
         "command": "acpClient.forkSession",
         "title": "ACP: Fork Current Session",
         "category": "ACP"
+      },
+      {
+        "command": "acpClient.showOutput",
+        "title": "ACP: Show Output Logs",
+        "category": "ACP"
       }
     ],
     "chatParticipants": [

@@ -220,13 +220,20 @@ export class ChatViewComponent {
           ` : ''}
           <div class="welcome-hints">
             <span style="display: inline-flex; align-items: center; gap: 6px;">${ICONS.lightbulb} <span><strong>Tip:</strong> Press <code>/</code> in the input box for skills (/tdd, /review, /design, /plan)</span></span>
+            <button class="btn-link-output" type="button" style="display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: var(--accent-color); cursor: pointer; font-size: 11px; padding: 2px 0;">
+              ${ICONS.terminal} <span>View Output Logs</span>
+            </button>
           </div>
         </div>
       `;
 
       welcome.querySelector('.btn-welcome-connect')?.addEventListener('click', () => {
         const sel = welcome.querySelector('.welcome-agent-select') as HTMLSelectElement;
-        const agentId = sel?.value || this.activeAgentId || this.agentConfigs[0]?.id || 'default-agent';
+        const agentId = sel?.value || this.activeAgentId || this.agentConfigs[0]?.id;
+        if (!agentId) {
+          this.onAction({ type: 'TOGGLE_CONFIG' });
+          return;
+        }
         this.onAction({
           type: 'CREATE_SESSION',
           payload: { agentId, title: 'New Session' },
@@ -235,6 +242,10 @@ export class ChatViewComponent {
 
       welcome.querySelector('.btn-welcome-config')?.addEventListener('click', () => {
         this.onAction({ type: 'TOGGLE_CONFIG' });
+      });
+
+      welcome.querySelector('.btn-link-output')?.addEventListener('click', () => {
+        this.onAction({ type: 'SHOW_OUTPUT' });
       });
 
       this.container.appendChild(welcome);

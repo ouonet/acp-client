@@ -123,6 +123,9 @@ export type WebviewAction =
         originalContent: string;
         modifiedContent: string;
       };
+    }
+  | {
+      type: 'SHOW_OUTPUT';
     };
 
 export const WEBVIEW_ACTION_TYPES = new Set<string>([
@@ -142,6 +145,7 @@ export const WEBVIEW_ACTION_TYPES = new Set<string>([
   'INSERT_CODE_TO_EDITOR',
   'APPLY_FILE_DIFF',
   'OPEN_DIFF_EDITOR',
+  'SHOW_OUTPUT',
 ]);
 
 export function isWebviewAction(val: unknown): val is WebviewAction {

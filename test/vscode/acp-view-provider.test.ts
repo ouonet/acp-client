@@ -125,11 +125,17 @@ describe('T2: AcpViewProvider & Unidirectional IPC Bridge', () => {
       ]),
     };
 
+    const mockOutputChannel = {
+      appendLine: vi.fn(),
+      show: vi.fn(),
+    };
+
     provider = new AcpViewProvider({
       extensionUri: { fsPath: '/ext', scheme: 'file' } as any,
       sessionHub: mockSessionHub,
       processManager: mockProcessManager,
       storageManager: mockStorageManager,
+      outputChannel: mockOutputChannel as any,
     });
   });
 
@@ -213,5 +219,31 @@ describe('T2: AcpViewProvider & Unidirectional IPC Bridge', () => {
     });
 
     expect(mockStorageManager.saveAgentConfigs).toHaveBeenCalled();
+  });
+
+  it('should handle SHOW_OUTPUT action by calling outputChannel.show', async () => {
+    provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
+
+    await mockWebview.fireMessage({
+      type: 'SHOW_OUTPUT',
+    });
+
+    const mockOutput = (provider as any).outputChannel;
+    expect(mockOutput.show).toHaveBeenCalledWith(true);
+  });
+
+  it('should fallback to available agent config if requested agentId not found in CREATE_SESSION', async () => {
+    provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
+
+    await mockWebview.fireMessage({
+      type: 'CREATE_SESSION',
+      payload: { agentId: 'non-existent-agent', title: 'Fallback Test' },
+    });
+
+    expect(mockSessionHub.createSession).toHaveBeenCalledWith('agent-1', 'Fallback Test', {
+      model: undefined,
+      thinkingLevel: undefined,
+      cwd: undefined,
+    });
   });
 });

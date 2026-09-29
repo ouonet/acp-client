@@ -146,6 +146,12 @@ describe('T3: HeaderComponent & UI Shell Controls', () => {
     const historyBtn = container.querySelector<HTMLButtonElement>('[data-action="toggle-history"]');
     historyBtn?.click();
     expect(onActionMock).toHaveBeenCalledWith({ type: 'TOGGLE_HISTORY' });
+
+    // Output logs button
+    const outputBtn = container.querySelector<HTMLButtonElement>('[data-action="show-output"]');
+    expect(outputBtn).not.toBeNull();
+    outputBtn?.click();
+    expect(onActionMock).toHaveBeenCalledWith({ type: 'SHOW_OUTPUT' });
   });
 
   it('should NOT render model or thinking badges when no agent is connected or running', () => {

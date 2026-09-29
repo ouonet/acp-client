@@ -8,6 +8,7 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import type { ISessionHub } from '../core/session/session-hub';
 import type { IProcessPort, IStoragePort, IWorkspacePort, Disposable } from '../core/ports';
+import { AcpClientAdapter } from '../core/protocol/acp-client-adapter';
 import {
   isWebviewAction,
   type WebviewAction,
@@ -22,6 +23,7 @@ export interface AcpViewProviderOptions {
   processManager: IProcessPort;
   storageManager: IStoragePort;
   workspaceAdapter?: IWorkspacePort;
+  outputChannel?: vscode.OutputChannel;
 }
 
 export class AcpViewProvider implements vscode.WebviewViewProvider {
@@ -33,6 +35,7 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
   private readonly processManager: IProcessPort;
   private readonly storageManager: IStoragePort;
   private readonly workspaceAdapter?: IWorkspacePort;
+  private readonly outputChannel?: vscode.OutputChannel;
 
   private readonly disposables: Disposable[] = [];
 
@@ -42,6 +45,7 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
     this.processManager = options.processManager;
     this.storageManager = options.storageManager;
     this.workspaceAdapter = options.workspaceAdapter;
+    this.outputChannel = options.outputChannel;
 
     // Subscribe to session list changes
     this.disposables.push(
@@ -84,13 +88,30 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage(async (data: unknown) => {
       if (isWebviewAction(data)) {
-        await this.handleAction(data);
+        try {
+          await this.handleAction(data);
+        } catch (err: any) {
+          const errMsg = err?.message || String(err);
+          this.log(`Error handling action ${data.type}: ${errMsg}`);
+          vscode.window
+            .showErrorMessage(`ACP Client: ${errMsg}`, 'Show Output')
+            .then((choice) => {
+              if (choice === 'Show Output') {
+                this.outputChannel?.show(true);
+              }
+            });
+        }
       }
     });
 
     webviewView.onDidDispose(() => {
       this.view = undefined;
     });
+  }
+
+  public log(message: string): void {
+    const timestamp = new Date().toISOString();
+    this.outputChannel?.appendLine(`[${timestamp}] [AcpViewProvider] ${message}`);
   }
 
   public async postMessage(message: ExtensionMessage): Promise<boolean> {
@@ -189,7 +210,29 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
 
       case 'CREATE_SESSION': {
         const { agentId, title, model, thinkingLevel, cwd } = action.payload;
-        await this.sessionHub.createSession(agentId, title, { model, thinkingLevel, cwd });
+        try {
+          const configs = await this.storageManager.getAgentConfigs();
+          const targetId = configs.some((c) => c.id === agentId)
+            ? agentId
+            : configs[0]?.id;
+          if (!targetId) {
+            vscode.window.showWarningMessage('No ACP Agent configured. Please configure an agent first.');
+            break;
+          }
+          this.log(`Creating session for agent "${targetId}"`);
+          await this.sessionHub.createSession(targetId, title, { model, thinkingLevel, cwd });
+          this.log(`Session created successfully for agent "${targetId}"`);
+        } catch (err: any) {
+          const errMsg = err?.message || String(err);
+          this.log(`Failed to create session for agent ${agentId}: ${errMsg}`);
+          vscode.window
+            .showErrorMessage(`Failed to connect to agent "${agentId}": ${errMsg}`, 'Show Output')
+            .then((choice) => {
+              if (choice === 'Show Output') {
+                this.outputChannel?.show(true);
+              }
+            });
+        }
         await this.broadcastStateSnapshot();
         break;
       }
@@ -238,6 +281,11 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
 
       case 'TEST_AGENT_CONNECTION': {
         await this.testAgentConnection(action.payload.config);
+        break;
+      }
+
+      case 'SHOW_OUTPUT': {
+        this.outputChannel?.show(true);
         break;
       }
 
@@ -304,25 +352,42 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
 
   private async testAgentConnection(config: AgentConfig): Promise<void> {
     const startTime = Date.now();
+    this.log(`Testing connection for agent: ${config.name} (${config.command} ${(config.args || []).join(' ')})`);
     try {
       const proc = await this.processManager.start(config);
+      this.log(`Process spawned (PID: ${proc.pid}). Testing ACP handshake...`);
+
+      const adapter = new AcpClientAdapter({
+        input: proc.stdout,
+        output: proc.stdin,
+        clientInfo: { name: 'vscode-acp-client-test', version: '0.1.0' },
+      });
+      const initResult = await adapter.initialize();
       const durationMs = Date.now() - startTime;
+      this.log(`ACP handshake success (Protocol v${initResult.protocolVersion}) in ${durationMs}ms`);
+
+      await this.processManager.stop(config.id, true).catch(() => {});
+
       await this.postMessage({
         type: 'TEST_CONNECTION_RESULT',
         payload: {
           success: true,
-          protocolVersion: 1,
-          capabilities: { pid: proc.pid },
+          protocolVersion: initResult.protocolVersion,
+          capabilities: initResult.agentCapabilities,
           durationMs,
         },
       });
     } catch (err: any) {
+      const durationMs = Date.now() - startTime;
+      const errMsg = err?.message || 'Connection test failed';
+      this.log(`Connection test failed in ${durationMs}ms: ${errMsg}`);
+      await this.processManager.stop(config.id, true).catch(() => {});
       await this.postMessage({
         type: 'TEST_CONNECTION_RESULT',
         payload: {
           success: false,
-          error: err.message || 'Connection test failed',
-          durationMs: Date.now() - startTime,
+          error: errMsg,
+          durationMs,
         },
       });
     }

@@ -172,4 +172,27 @@ describe('T4: ProcessManager (Lifecycle Supervision & Zombie Protection)', () =>
     expect(processManager.getStatus('agent-1')).toBe('stopped');
     expect(processManager.getStatus('agent-2')).toBe('stopped');
   });
+
+  it('should stream stdout and stderr to onLog listener', async () => {
+    const config: AgentConfig = {
+      id: 'agent-logging',
+      name: 'Logging Agent',
+      command: 'node',
+      args: ['-e', 'console.log("hello stdout"); console.error("hello stderr");'],
+      env: {},
+      transport: 'stdio',
+      enabled: true,
+    };
+
+    const logs: Array<{ agentId: string; text: string; stream: string }> = [];
+    processManager.onLog((agentId, text, stream) => {
+      logs.push({ agentId, text, stream });
+    });
+
+    await processManager.start(config);
+    await new Promise((r) => setTimeout(r, 100));
+
+    expect(logs.some((l) => l.agentId === 'agent-logging' && l.text.includes('hello stdout'))).toBe(true);
+    expect(logs.some((l) => l.agentId === 'agent-logging' && l.text.includes('hello stderr'))).toBe(true);
+  });
 });
