@@ -12,6 +12,7 @@ import type {
 } from '../types/session';
 import type { AcpClientAdapter } from '../protocol/acp-client-adapter';
 import { Session, type ISession } from './session';
+export type { ISession };
 
 export interface SessionHubOptions {
   processManager: IProcessPort;

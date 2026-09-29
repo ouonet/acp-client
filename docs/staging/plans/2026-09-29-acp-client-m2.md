@@ -11,7 +11,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/vscode/ipc-protocol.test.ts` passes; type check passes with zero errors under strict mode.
   spec: docs/staging/specs/2026-09-29-acp-client.md#architecture
 
-- [ ] T2: Webview View Provider & Unidirectional IPC Bridge
+- [x] T2: Webview View Provider & Unidirectional IPC Bridge
   goal: Implement `AcpViewProvider` (`vscode.WebviewViewProvider`) managing Webview lifecycle, translating incoming UI Actions (SEND_PROMPT, CANCEL, FORK, etc.) to SessionHub/ProcessManager calls, and broadcasting state snapshots and events to Webview.
   files: src/vscode/acp-view-provider.ts, src/vscode/extension.ts, test/vscode/acp-view-provider.test.ts
   acceptance: `npx vitest run test/vscode/acp-view-provider.test.ts` passes with mocked Webview testing bidirectional message handling and state broadcasting.
