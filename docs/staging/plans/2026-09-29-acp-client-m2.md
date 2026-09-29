@@ -23,7 +23,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: Header updates status indicator on process events, switches models and thinking levels, and toggles config/history drawers.
   spec: docs/staging/specs/2026-09-29-acp-client.md#1-主对话界面cockpit-wireframe
 
-- [ ] T4: Streaming Chat View & Collapsible Thinking Block
+- [x] T4: Streaming Chat View & Collapsible Thinking Block
   goal: Implement `ChatView` rendering user & assistant messages, incremental Markdown streaming, code syntax highlighting with line numbers, copy button, insert-at-cursor action, and collapsible `ThinkingBlock` (`[▾ Thinking (x.xs)]`).
   files: src/webview/components/chat-view.ts, src/webview/components/thinking-block.ts, test/webview/chat-view.test.ts
   acceptance: `npx vitest run test/webview/chat-view.test.ts` passes verifying markdown parsing, thinking block toggle, and tool call card rendering.
