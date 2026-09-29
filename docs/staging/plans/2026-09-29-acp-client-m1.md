@@ -41,7 +41,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/session-hub.test.ts` passes all tests verifying parallel session dispatch, crash cascade, and deep-clone fork isolation.
   spec: docs/staging/specs/2026-09-29-acp-client.md#3-session--session-hub-srccoresessionsessionts-srccoresessionsession-hubts
 
-- [ ] T7: M1 Integration Verification & Baseline Green
+- [x] T7: M1 Integration Verification & Baseline Green
   goal: Assemble ProcessManager, AcpClientAdapter, SessionHub, and StorageManager into an end-to-end headless integration suite verifying a full conversation turn with fork and crash recovery.
   files: test/integration/headless-engine.test.ts
   acceptance: `npm test` runs all unit and integration test suites with 100% green; `npm run build` succeeds without warnings.
