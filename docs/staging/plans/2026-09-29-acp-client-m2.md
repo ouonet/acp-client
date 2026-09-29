@@ -29,7 +29,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/webview/chat-view.test.ts` passes verifying markdown parsing, thinking block toggle, and tool call card rendering.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-03-流式交互与精细消息渲染-fine-grained-stream--thinking-blocks
 
-- [ ] T5: Ergonomic Input Box (Send/Stop Toggle, History Ring Buffer & Multimodal)
+- [x] T5: Ergonomic Input Box (Send/Stop Toggle, History Ring Buffer & Multimodal)
   goal: Implement `InputBox` component featuring a single dynamic Send/Stop toggle button, keyboard `↑`/`↓` prompt history recall from StorageManager, auto-growing textarea, and multimodal attachment support (paste image from clipboard, drag-drop, file attach).
   files: src/webview/components/input-box.ts, test/webview/input-box.test.ts
   acceptance: `npx vitest run test/webview/input-box.test.ts` passes verifying Send/Stop mode toggle on streaming state, history index cycling, and image base64 conversion.

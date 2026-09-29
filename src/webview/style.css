@@ -293,6 +293,38 @@ pre code {
   gap: 8px;
 }
 
+.attachment-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--fg-primary);
+}
+
+.attachment-chip .remove-attachment {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.attachment-chip .remove-attachment:hover {
+  color: var(--status-error);
+}
+
 .input-top-bar {
   display: flex;
   align-items: center;
@@ -312,6 +344,22 @@ pre code {
   padding: 3px 6px;
   font-size: 11px;
   outline: none;
+}
+
+.btn-attach {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-attach:hover {
+  color: var(--fg-primary);
+  border-color: var(--accent-color);
 }
 
 .input-box-wrapper {
