@@ -14,6 +14,11 @@ export interface AttachmentItem {
   size?: number;
 }
 
+export interface SlashCommandItem {
+  name: string;
+  description: string;
+}
+
 export interface InputBoxOptions {
   container: HTMLElement;
   sessionId?: string;
@@ -32,6 +37,8 @@ export interface InputBoxOptions {
   onCancel: (sessionId: string) => void;
   onModelChange?: (model: string) => void;
   onThinkingLevelChange?: (level: ThinkingLevel) => void;
+  onClear?: () => void;
+  skills?: SlashCommandItem[];
 }
 
 export class InputBoxComponent {
@@ -47,6 +54,17 @@ export class InputBoxComponent {
   private status: SessionStatus;
   private attachments: AttachmentItem[] = [];
 
+  // Slash commands
+  private slashCommands: SlashCommandItem[] = [
+    { name: 'clear', description: 'Clear active chat session history' },
+    { name: 'tdd', description: 'Test-Driven Development workflow (Red-Green-Refactor)' },
+    { name: 'review', description: 'Rigorous code review against spec and guidelines' },
+    { name: 'design', description: 'Architectural and spec design before coding' },
+    { name: 'plan', description: 'Create milestone-driven execution plan' },
+  ];
+  private filteredSlashCommands: SlashCommandItem[] = [];
+  private activeSlashIndex = 0;
+
   // DOM Elements
   private previewArea!: HTMLElement;
   private modelSelect!: HTMLSelectElement;
@@ -54,6 +72,7 @@ export class InputBoxComponent {
   private textarea!: HTMLTextAreaElement;
   private toggleButton!: HTMLButtonElement;
   private fileInput!: HTMLInputElement;
+  private slashPopup!: HTMLElement;
 
   constructor(options: InputBoxOptions) {
     this.container = options.container;
@@ -66,6 +85,14 @@ export class InputBoxComponent {
     this.currentModel = options.currentModel || this.models[0];
     this.thinkingLevel = options.thinkingLevel || 'off';
     this.status = options.status || 'idle';
+
+    if (options.skills && options.skills.length > 0) {
+      for (const skill of options.skills) {
+        if (!this.slashCommands.some((c) => c.name === skill.name)) {
+          this.slashCommands.push(skill);
+        }
+      }
+    }
 
     this.render();
     this.bindEvents();
@@ -96,10 +123,11 @@ export class InputBoxComponent {
           <input type="file" class="file-attach-input" accept="image/*" style="display: none;" />
         </div>
       </div>
-      <div class="input-box-wrapper">
+      <div class="input-box-wrapper" style="position: relative;">
+        <div class="slash-commands-popup" style="display: none;"></div>
         <textarea
           class="prompt-input"
-          placeholder="Ask a question or describe a task... (↑/↓ to recall history, Enter to send)"
+          placeholder="Ask a question or describe a task... (↑/↓ to recall history, / for commands)"
           rows="1"
         ></textarea>
         <div class="input-actions">
@@ -118,6 +146,7 @@ export class InputBoxComponent {
     this.textarea = this.container.querySelector('textarea.prompt-input') as HTMLTextAreaElement;
     this.toggleButton = this.container.querySelector('.btn-toggle-action') as HTMLButtonElement;
     this.fileInput = this.container.querySelector('.file-attach-input') as HTMLInputElement;
+    this.slashPopup = this.container.querySelector('.slash-commands-popup') as HTMLElement;
 
     if (this.currentModel) {
       this.modelSelect.value = this.currentModel;
@@ -196,13 +225,59 @@ export class InputBoxComponent {
       }
     });
 
-    // Auto-grow textarea
+    // Auto-grow textarea & slash commands detection
     this.textarea.addEventListener('input', () => {
       this.adjustHeight();
+      this.checkSlashCommands();
+    });
+
+    // Click outside to dismiss slash popup
+    document.addEventListener('click', (e: MouseEvent) => {
+      if (this.slashPopup && this.slashPopup.style.display !== 'none') {
+        const target = e.target as Node;
+        if (!this.container.contains(target)) {
+          this.hideSlashPopup();
+        }
+      }
     });
 
     // Keydown handler
     this.textarea.addEventListener('keydown', (e: KeyboardEvent) => {
+      // Handle slash popup navigation
+      if (
+        this.slashPopup &&
+        this.slashPopup.style.display !== 'none' &&
+        this.filteredSlashCommands.length > 0
+      ) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.activeSlashIndex = (this.activeSlashIndex + 1) % this.filteredSlashCommands.length;
+          this.updateSlashActive();
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.activeSlashIndex =
+            (this.activeSlashIndex - 1 + this.filteredSlashCommands.length) %
+            this.filteredSlashCommands.length;
+          this.updateSlashActive();
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          const selected = this.filteredSlashCommands[this.activeSlashIndex];
+          if (selected) {
+            this.executeSlashCommand(selected);
+          }
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          this.hideSlashPopup();
+          return;
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         if (!this.isBusy()) {
@@ -251,6 +326,82 @@ export class InputBoxComponent {
         this.submit();
       }
     });
+  }
+
+  private checkSlashCommands(): void {
+    const val = this.textarea.value;
+    if (val.startsWith('/')) {
+      const match = val.match(/^\/([a-zA-Z0-9_-]*)$/);
+      if (match) {
+        const query = match[1].toLowerCase();
+        this.filteredSlashCommands = this.slashCommands.filter((c) =>
+          c.name.toLowerCase().startsWith(query)
+        );
+        if (this.filteredSlashCommands.length > 0) {
+          this.activeSlashIndex = 0;
+          this.renderSlashPopup();
+          this.slashPopup.style.display = 'block';
+          return;
+        }
+      }
+    }
+    this.hideSlashPopup();
+  }
+
+  private renderSlashPopup(): void {
+    this.slashPopup.innerHTML = '';
+    this.filteredSlashCommands.forEach((cmd, idx) => {
+      const item = document.createElement('div');
+      item.className = `slash-item ${idx === this.activeSlashIndex ? 'active' : ''}`;
+      item.innerHTML = `
+        <span class="slash-name">/${cmd.name}</span>
+        <span class="slash-desc">${cmd.description}</span>
+      `;
+      item.addEventListener('click', () => {
+        this.executeSlashCommand(cmd);
+      });
+      this.slashPopup.appendChild(item);
+    });
+  }
+
+  private updateSlashActive(): void {
+    const items = this.slashPopup.querySelectorAll('.slash-item');
+    items.forEach((item, idx) => {
+      if (idx === this.activeSlashIndex) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+  }
+
+  private hideSlashPopup(): void {
+    if (this.slashPopup) {
+      this.slashPopup.style.display = 'none';
+      this.slashPopup.innerHTML = '';
+    }
+    this.filteredSlashCommands = [];
+    this.activeSlashIndex = 0;
+  }
+
+  private executeSlashCommand(cmd: SlashCommandItem): void {
+    if (cmd.name === 'clear') {
+      this.options.onClear?.();
+      this.textarea.value = '';
+    } else {
+      this.textarea.value = `/${cmd.name} `;
+    }
+    this.hideSlashPopup();
+    this.adjustHeight();
+    this.textarea.focus();
+  }
+
+  public setSkills(skills: SlashCommandItem[]): void {
+    for (const skill of skills) {
+      if (!this.slashCommands.some((c) => c.name === skill.name)) {
+        this.slashCommands.push(skill);
+      }
+    }
   }
 
   private adjustHeight(): void {

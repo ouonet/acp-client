@@ -1037,3 +1037,52 @@ textarea.prompt-input {
   color: var(--fg-primary);
   border-color: var(--accent-color);
 }
+
+/* Slash Commands Menu Popup */
+.slash-commands-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-float);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+}
+
+.slash-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.slash-item:hover,
+.slash-item.active {
+  background: rgba(137, 180, 250, 0.14);
+}
+
+.slash-name {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-weight: 600;
+  color: var(--accent-color);
+  font-size: 12px;
+  min-width: 70px;
+}
+
+.slash-desc {
+  font-size: 11px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

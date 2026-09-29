@@ -23,7 +23,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/webview/mcp-inspector.test.ts` passes; tool schema parameters rendered; toggle states propagated to session options.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-12-mcp-服务器与工具可视化透视-mcp-servers--tools-inspector
 
-- [ ] T4: Workspace Skill Discovery & Slash Command Autocomplete (`/`)
+- [x] T4: Workspace Skill Discovery & Slash Command Autocomplete (`/`)
   goal: Implement `SkillDiscovery` scanning `.agents/skills/` and `.skills/` for `SKILL.md` YAML frontmatter, and implement interactive slash command menu (`/tdd`, `/review`, `/design`, `/clear`) in `InputBoxComponent`.
   files: src/core/skills/skill-discovery.ts, src/webview/components/input-box.ts, test/core/skill-discovery.test.ts, test/webview/slash-commands.test.ts
   acceptance: `npx vitest run test/core/skill-discovery.test.ts` passes; typing `/` opens popup; selecting skill populates prompt or context directive.
