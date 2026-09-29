@@ -37,6 +37,9 @@ export interface IWorkspacePort {
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
   executeCommand(command: string, cwd?: string): Promise<{ stdout: string; stderr: string; exitCode: number }>;
+  listDirectory?(path: string): Promise<string[]>;
+  fileExists?(path: string): Promise<boolean>;
+  deleteFile?(path: string): Promise<void>;
 }
 
 export interface IStoragePort {

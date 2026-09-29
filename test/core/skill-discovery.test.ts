@@ -51,6 +51,7 @@ Follow RED-GREEN-REFACTOR cycle strictly.`;
         }),
         writeFile: vi.fn().mockResolvedValue(undefined),
         deleteFile: vi.fn().mockResolvedValue(undefined),
+        executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
         listDirectory: vi.fn().mockImplementation(async (dir: string) => {
           if (dir.endsWith('.agents/skills')) {
             return ['tdd', 'review'];
@@ -73,6 +74,7 @@ Follow RED-GREEN-REFACTOR cycle strictly.`;
         readFile: vi.fn().mockResolvedValue(''),
         writeFile: vi.fn().mockResolvedValue(undefined),
         deleteFile: vi.fn().mockResolvedValue(undefined),
+        executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
         listDirectory: vi.fn().mockResolvedValue([]),
       };
 

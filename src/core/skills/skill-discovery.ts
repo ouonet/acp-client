@@ -112,15 +112,23 @@ export class SkillDiscovery {
 
     for (const searchDir of searchDirs) {
       try {
+        if (!workspace.listDirectory) continue;
         const subdirs = await workspace.listDirectory(searchDir);
         for (const subdir of subdirs) {
           const skillFile = `${searchDir}/${subdir}/SKILL.md`;
-          const exists = await workspace.fileExists(skillFile);
+          let exists = true;
+          if (workspace.fileExists) {
+            exists = await workspace.fileExists(skillFile);
+          }
           if (exists) {
-            const content = await workspace.readFile(skillFile);
-            const skill = parseSkillFrontmatter(content, skillFile);
-            if (skill) {
-              discovered.push(skill);
+            try {
+              const content = await workspace.readFile(skillFile);
+              const skill = parseSkillFrontmatter(content, skillFile);
+              if (skill) {
+                discovered.push(skill);
+              }
+            } catch {
+              // File not readable
             }
           }
         }

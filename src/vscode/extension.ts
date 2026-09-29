@@ -9,11 +9,13 @@ import { SessionHub } from '../core/session/session-hub';
 import { AcpClientAdapter } from '../core/protocol/acp-client-adapter';
 import { VsCodeWorkspaceAdapter } from './ports/vscode-workspace-adapter';
 import { AcpViewProvider } from './acp-view-provider';
+import { AcpChatParticipant } from './chat-participant';
 import type { AgentConfig } from '../core/types/config';
 
 let processManager: ProcessManager | undefined;
 let sessionHub: SessionHub | undefined;
 let viewProvider: AcpViewProvider | undefined;
+let chatParticipant: AcpChatParticipant | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const storageDir = context.globalStorageUri.fsPath;
@@ -57,9 +59,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     workspaceAdapter,
   });
 
+  chatParticipant = new AcpChatParticipant({
+    sessionHub,
+    storageManager,
+  });
+
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(AcpViewProvider.viewType, viewProvider)
   );
+
+  context.subscriptions.push(chatParticipant);
 
   // Register commands
   context.subscriptions.push(
@@ -102,6 +111,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 }
 
 export async function deactivate(): Promise<void> {
+  chatParticipant?.dispose();
   viewProvider?.dispose();
   await sessionHub?.dispose();
   await processManager?.dispose();

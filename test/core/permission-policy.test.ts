@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Session } from '../../src/core/session/session';
-import type { IAcpClientPort } from '../../src/core/ports';
 
 describe('T2: Three-Tier Permission Policy Gate & Session Whitelisting', () => {
-  let mockAdapter: IAcpClientPort;
+  let mockAdapter: any;
   let session: Session;
 
   beforeEach(() => {

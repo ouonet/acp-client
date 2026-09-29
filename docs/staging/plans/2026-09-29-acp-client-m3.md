@@ -29,7 +29,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/skill-discovery.test.ts` passes; typing `/` opens popup; selecting skill populates prompt or context directive.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-13-技能体系支持-skill-discovery-slash-invocation--mcp-bridge
 
-- [ ] T5: VS Code Native Chat Participant Bridge (`@acp`)
+- [x] T5: VS Code Native Chat Participant Bridge (`@acp`)
   goal: Register VS Code Chat Participant `acpClient.acpParticipant` (`@acp`) allowing users to interact with ACP agents directly from the native VS Code Chat sidebar, streaming responses back via `vscode.ChatResponseStream`.
   files: src/vscode/chat-participant.ts, src/vscode/extension.ts, package.json, test/vscode/chat-participant.test.ts
   acceptance: `npx vitest run test/vscode/chat-participant.test.ts` passes; chat participant delegates to active SessionHub session and streams response.

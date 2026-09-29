@@ -35,3 +35,11 @@ export const commands = {
   registerCommand: () => ({ dispose: () => {} }),
   executeCommand: async () => undefined,
 };
+
+export const chat = {
+  createChatParticipant: (id: string, handler: any) => ({
+    id,
+    handler,
+    dispose: () => {},
+  }),
+};

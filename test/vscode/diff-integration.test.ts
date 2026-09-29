@@ -14,6 +14,7 @@ describe('T1: Diff Integration with VS Code Extension', () => {
     mockWorkspaceAdapter = {
       readFile: vi.fn().mockResolvedValue('original file content'),
       writeFile: vi.fn().mockResolvedValue(undefined),
+      executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
       deleteFile: vi.fn().mockResolvedValue(undefined),
       fileExists: vi.fn().mockResolvedValue(true),
       listDirectory: vi.fn().mockResolvedValue([]),

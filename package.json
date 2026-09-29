@@ -46,6 +46,25 @@
         "title": "ACP: Fork Current Session",
         "category": "ACP"
       }
+    ],
+    "chatParticipants": [
+      {
+        "id": "acpClient.acpParticipant",
+        "name": "acp",
+        "fullName": "ACP Agent Client",
+        "description": "Interact with autonomous ACP Agent in Zed-compliant protocol",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "clear",
+            "description": "Clear active session"
+          },
+          {
+            "name": "fork",
+            "description": "Fork current session into new branch"
+          }
+        ]
+      }
     ]
   },
   "scripts": {
