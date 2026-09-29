@@ -219,7 +219,7 @@ export class ChatViewComponent {
             </button>
           ` : ''}
           <div class="welcome-hints">
-            <span>💡 <strong>Tip:</strong> Press <code>/</code> in the input box for skills (/tdd, /review, /design, /plan)</span>
+            <span style="display: inline-flex; align-items: center; gap: 6px;">${ICONS.lightbulb} <span><strong>Tip:</strong> Press <code>/</code> in the input box for skills (/tdd, /review, /design, /plan)</span></span>
           </div>
         </div>
       `;

@@ -4,6 +4,7 @@
 
 import type { SessionSummary } from '../../core/types/session';
 import type { WebviewAction } from '../../shared/ipc-protocol';
+import { ICONS } from './icons';
 
 export interface HistoryDrawerOptions {
   container: HTMLElement;
@@ -71,8 +72,8 @@ export class HistoryDrawerComponent {
 
     this.container.innerHTML = `
       <div class="drawer-header">
-        <div class="drawer-title">🕒 Session History (${this.sessions.length})</div>
-        <button class="drawer-close-btn" type="button" title="Close Drawer">✕</button>
+        <div class="drawer-title">${ICONS.history} <span>Session History (${this.sessions.length})</span></div>
+        <button class="drawer-close-btn" type="button" title="Close Drawer">${ICONS.close}</button>
       </div>
       <div class="drawer-body">
         <div class="history-search-bar">
@@ -104,7 +105,7 @@ export class HistoryDrawerComponent {
                     <span class="meta-badge msg-count">${s.messageCount} msgs</span>
                     ${
                       s.parentSessionId
-                        ? `<span class="meta-badge fork-lineage">🔀 Forked</span>`
+                        ? `<span class="meta-badge fork-lineage">${ICONS.fork} <span>Forked</span></span>`
                         : ''
                     }
                   </div>
@@ -115,13 +116,13 @@ export class HistoryDrawerComponent {
                     type="button"
                     data-session-id="${s.id}"
                     title="Fork this session"
-                  >🔀 Fork</button>
+                  >${ICONS.fork} <span>Fork</span></button>
                   <button
                     class="btn-session-delete"
                     type="button"
                     data-session-id="${s.id}"
                     title="Delete session"
-                  >🗑</button>
+                  >${ICONS.trash}</button>
                 </div>
               </div>
             `

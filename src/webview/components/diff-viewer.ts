@@ -3,6 +3,8 @@
  * syntax lines, Accept All and VS Code Diff Editor integration.
  */
 
+import { ICONS } from './icons';
+
 export interface DiffLine {
   type: 'add' | 'delete' | 'context' | 'hunk';
   oldLine?: number;
@@ -144,7 +146,7 @@ export class DiffViewerComponent {
     card.innerHTML = `
       <div class="diff-header">
         <div class="diff-file-info">
-          <span class="diff-file-icon">📄</span>
+          <span class="diff-file-icon">${ICONS.file}</span>
           <span class="diff-file-path">${escapeHtml(this.options.filePath)}</span>
           <span class="diff-stats">
             <span class="diff-add-stat">+${this.parsedDiff.additions}</span>
@@ -152,8 +154,8 @@ export class DiffViewerComponent {
           </span>
         </div>
         <div class="diff-actions">
-          <button class="btn-accept-diff" type="button" title="Accept and apply diff to file">✓ Accept All</button>
-          <button class="btn-open-diff" type="button" title="Open VS Code native Diff Editor">🔍 Open in Diff Editor</button>
+          <button class="btn-accept-diff" type="button" title="Accept and apply diff to file">${ICONS.check} <span>Accept All</span></button>
+          <button class="btn-open-diff" type="button" title="Open VS Code native Diff Editor">${ICONS.diff} <span>Open in Diff Editor</span></button>
         </div>
       </div>
       <div class="diff-content-wrapper">

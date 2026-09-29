@@ -159,6 +159,44 @@ describe('T6: ConfigPanelComponent & HistoryDrawerComponent', () => {
 
       expect(onClose).toHaveBeenCalled();
     });
+
+    it('should render professional SVG icons instead of emojis', () => {
+      const panel = new ConfigPanelComponent({
+        container: configContainer,
+        configs: [sampleAgentConfig, { ...sampleAgentConfig, id: 'agent-2', name: 'Agent 2' }],
+        activeAgentId: 'claude-code',
+        onAction: vi.fn(),
+        onClose: vi.fn(),
+      });
+
+      // Header title and close button
+      const header = configContainer.querySelector('.drawer-header') as HTMLElement;
+      expect(header.querySelector('.svg-icon')).not.toBeNull();
+      expect(header.textContent).not.toContain('⚙');
+      expect(header.textContent).not.toContain('✕');
+
+      // Buttons
+      const pingBtn = configContainer.querySelector('.btn-ping') as HTMLElement;
+      expect(pingBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(pingBtn.textContent).not.toContain('⚡');
+
+      const saveBtn = configContainer.querySelector('.btn-save-config') as HTMLElement;
+      expect(saveBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(saveBtn.textContent).not.toContain('💾');
+
+      const deleteBtn = configContainer.querySelector('.btn-delete-config') as HTMLElement;
+      expect(deleteBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(deleteBtn.textContent).not.toContain('🗑');
+
+      const deleteEnvBtn = configContainer.querySelector('.btn-delete-env') as HTMLElement;
+      expect(deleteEnvBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(deleteEnvBtn.textContent).not.toContain('🗑');
+
+      // Error result
+      panel.showTestResult({ success: false, durationMs: 50, error: 'Failed' });
+      const errorBox = configContainer.querySelector('.ping-result') as HTMLElement;
+      expect(errorBox.textContent).not.toContain('🔴');
+    });
   });
 
   describe('HistoryDrawerComponent', () => {
@@ -276,6 +314,35 @@ describe('T6: ConfigPanelComponent & HistoryDrawerComponent', () => {
       const filteredItems = historyContainer.querySelectorAll('.history-session-item');
       expect(filteredItems.length).toBe(1);
       expect(filteredItems[0].textContent).toContain('Zustand State Investigation');
+    });
+
+    it('should render professional SVG icons instead of emojis', () => {
+      new HistoryDrawerComponent({
+        container: historyContainer,
+        sessions: sampleSessions,
+        activeSessionId: 'session-1',
+        onAction: vi.fn(),
+        onClose: vi.fn(),
+      });
+
+      // Header title and close button
+      const header = historyContainer.querySelector('.drawer-header') as HTMLElement;
+      expect(header.querySelector('.svg-icon')).not.toBeNull();
+      expect(header.textContent).not.toContain('🕒');
+      expect(header.textContent).not.toContain('✕');
+
+      // Fork lineage badge and action buttons
+      const forkBadge = historyContainer.querySelector('.fork-lineage') as HTMLElement;
+      expect(forkBadge.querySelector('.svg-icon')).not.toBeNull();
+      expect(forkBadge.textContent).not.toContain('🔀');
+
+      const forkBtn = historyContainer.querySelector('.btn-session-fork') as HTMLElement;
+      expect(forkBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(forkBtn.textContent).not.toContain('🔀');
+
+      const deleteBtn = historyContainer.querySelector('.btn-session-delete') as HTMLElement;
+      expect(deleteBtn.querySelector('.svg-icon')).not.toBeNull();
+      expect(deleteBtn.textContent).not.toContain('🗑');
     });
   });
 });

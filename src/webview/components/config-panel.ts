@@ -4,6 +4,7 @@
 
 import type { AgentConfig } from '../../core/types/config';
 import type { WebviewAction } from '../../shared/ipc-protocol';
+import { ICONS } from './icons';
 
 export interface TestResultData {
   success: boolean;
@@ -72,7 +73,7 @@ export class ConfigPanelComponent {
     } else {
       this.pingResultBox.className = 'ping-result error';
       this.pingResultBox.innerHTML = `
-        <span class="status-indicator">🔴</span>
+        <span class="status-indicator status-error">●</span>
         <strong>Connection Failed (${result.durationMs}ms)</strong>
         <div class="ping-error-detail">${result.error || 'Unknown error'}</div>
       `;
@@ -135,8 +136,8 @@ export class ConfigPanelComponent {
 
     this.container.innerHTML = `
       <div class="drawer-header">
-        <div class="drawer-title">⚙ Agent Configuration</div>
-        <button class="drawer-close-btn" type="button" title="Close Panel">✕</button>
+        <div class="drawer-title">${ICONS.settings} <span>Agent Configuration</span></div>
+        <button class="drawer-close-btn" type="button" title="Close Panel">${ICONS.close}</button>
       </div>
       <div class="drawer-body">
         <div class="agent-tabs-bar">
@@ -151,7 +152,7 @@ export class ConfigPanelComponent {
           `
             )
             .join('')}
-          <button class="agent-tab-btn add-new-agent" type="button">+ Add</button>
+          <button class="agent-tab-btn add-new-agent" type="button">${ICONS.plus} <span>Add</span></button>
         </div>
 
         <form class="config-form" onsubmit="return false;">
@@ -192,13 +193,13 @@ export class ConfigPanelComponent {
                 <div class="env-row">
                   <input type="text" class="env-key form-input" value="${k}" placeholder="Key" />
                   <input type="password" class="env-val form-input" value="${v}" placeholder="Value" />
-                  <button type="button" class="btn-delete-env">🗑</button>
+                  <button type="button" class="btn-delete-env" title="Delete Environment Variable">${ICONS.trash}</button>
                 </div>
               `
                 )
                 .join('')}
             </div>
-            <button type="button" class="btn-add-env">+ Add Env Var</button>
+            <button type="button" class="btn-add-env">${ICONS.plus} <span>Add Env Var</span></button>
           </div>
 
           <div class="form-group">
@@ -220,11 +221,11 @@ export class ConfigPanelComponent {
           </div>
 
           <div class="form-actions">
-            <button type="button" class="btn-ping">⚡ Test Connection (Ping)</button>
-            <button type="button" class="btn-save-config">💾 Save Config</button>
+            <button type="button" class="btn-ping">${ICONS.bolt} <span>Test Connection (Ping)</span></button>
+            <button type="button" class="btn-save-config">${ICONS.save} <span>Save Config</span></button>
             ${
               this.configs.length > 1
-                ? `<button type="button" class="btn-delete-config">🗑 Delete Agent</button>`
+                ? `<button type="button" class="btn-delete-config">${ICONS.trash} <span>Delete Agent</span></button>`
                 : ''
             }
           </div>
@@ -286,7 +287,7 @@ export class ConfigPanelComponent {
         row.innerHTML = `
           <input type="text" class="env-key form-input" placeholder="Key" />
           <input type="text" class="env-val form-input" placeholder="Value" />
-          <button type="button" class="btn-delete-env">🗑</button>
+          <button type="button" class="btn-delete-env" title="Delete Environment Variable">${ICONS.trash}</button>
         `;
         row.querySelector('.btn-delete-env')?.addEventListener('click', () => {
           row.remove();
@@ -309,7 +310,7 @@ export class ConfigPanelComponent {
       const updated = this.readFormConfig();
       if (this.pingResultBox) {
         this.pingResultBox.className = 'ping-result testing';
-        this.pingResultBox.innerHTML = `<span>⏳ Probing Agent process...</span>`;
+        this.pingResultBox.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 6px;">${ICONS.spinner} <span>Probing Agent process...</span></span>`;
       }
       this.options.onAction({
         type: 'TEST_AGENT_CONNECTION',
