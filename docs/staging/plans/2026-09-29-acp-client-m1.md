@@ -23,7 +23,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/storage-manager.test.ts` passes all tests covering atomic writes, corrupted file recovery, and input history bounds.
   spec: docs/staging/specs/2026-09-29-acp-client.md#4-storage--history-srccorestoragestorage-managerts
 
-- [ ] T4: Process Manager with Zombie-Free Lifecycle Supervision
+- [x] T4: Process Manager with Zombie-Free Lifecycle Supervision
   goal: Implement ProcessManager to spawn, monitor, restart ACP Agent child processes with status events and SIGTERM -> 5000ms SIGKILL timeout protection.
   files: src/core/process/process-manager.ts, test/core/process-manager.test.ts
   acceptance: `npx vitest run test/core/process-manager.test.ts` passes all tests verifying process spawning, status events, auto-restart, and timeout kill.

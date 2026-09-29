@@ -10,3 +10,4 @@ export * from './core/types/session';
 export * from './core/errors';
 export * from './core/ports';
 export * from './core/storage/storage-manager';
+export * from './core/process/process-manager';
