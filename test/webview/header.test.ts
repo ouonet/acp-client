@@ -120,4 +120,29 @@ describe('T3: HeaderComponent & UI Shell Controls', () => {
     historyBtn?.click();
     expect(onActionMock).toHaveBeenCalledWith({ type: 'TOGGLE_HISTORY' });
   });
+
+  it('should NOT render model or thinking badges when no agent is connected or running', () => {
+    const header = new HeaderComponent({
+      container,
+      onAction: onActionMock,
+    });
+
+    header.update({
+      activeSession: undefined,
+      sessions: [],
+      agentConfigs: [],
+      inputHistory: [],
+      processStatuses: {},
+    });
+
+    const modelBadge = container.querySelector('.model-badge');
+    const thinkingBadge = container.querySelector('.thinking-badge');
+
+    expect(modelBadge).toBeNull();
+    expect(thinkingBadge).toBeNull();
+    expect(container.textContent).toContain('No Agent');
+    expect(container.textContent).not.toContain('default');
+    expect(container.textContent).not.toContain('off');
+  });
 });
+

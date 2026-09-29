@@ -30,8 +30,9 @@ export class HeaderComponent {
     const agentConfig = snapshot.agentConfigs.find((c) => c.id === activeSession?.agentId);
     const agentName = agentConfig?.name || activeSession?.agentId || 'No Agent';
     const status = (activeSession?.agentId && snapshot.processStatuses[activeSession.agentId]) || 'stopped';
-    const model = activeSession?.model || 'default';
-    const thinking = activeSession?.thinkingLevel || 'off';
+    const isRunning = !!activeSession?.agentId && status === 'running';
+    const model = isRunning && activeSession?.model ? activeSession.model : null;
+    const thinking = isRunning && activeSession?.thinkingLevel ? activeSession.thinkingLevel : null;
 
     this.container.innerHTML = `
       <header class="acp-header">
@@ -42,8 +43,8 @@ export class HeaderComponent {
           </div>
         </div>
         <div class="header-center">
-          <span class="model-badge">${this.escapeHtml(model)}</span>
-          <span class="thinking-badge">${this.escapeHtml(thinking)}</span>
+          ${model ? `<span class="model-badge">${this.escapeHtml(model)}</span>` : ''}
+          ${thinking ? `<span class="thinking-badge">${this.escapeHtml(thinking)}</span>` : ''}
         </div>
         <div class="header-right">
           <button class="icon-btn" data-action="fork" title="Fork Session (Branch Conversation)">

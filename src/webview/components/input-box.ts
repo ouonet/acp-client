@@ -50,7 +50,7 @@ export class InputBoxComponent {
   private tempDraft = '';
   private models: string[];
   private currentModel?: string;
-  private thinkingLevel: ThinkingLevel;
+  private thinkingLevel?: ThinkingLevel;
   private status: SessionStatus;
   private attachments: AttachmentItem[] = [];
 
@@ -79,11 +79,9 @@ export class InputBoxComponent {
     this.options = options;
     this.sessionId = options.sessionId || '';
     this.history = options.history ? [...options.history] : [];
-    this.models = options.models && options.models.length > 0
-      ? [...options.models]
-      : ['claude-3-7-sonnet', 'claude-3-5-sonnet', 'gpt-4o', 'o3-mini'];
-    this.currentModel = options.currentModel || this.models[0];
-    this.thinkingLevel = options.thinkingLevel || 'off';
+    this.models = options.models && options.models.length > 0 ? [...options.models] : [];
+    this.currentModel = options.currentModel;
+    this.thinkingLevel = options.thinkingLevel;
     this.status = options.status || 'idle';
 
     if (options.skills && options.skills.length > 0) {
@@ -99,23 +97,35 @@ export class InputBoxComponent {
   }
 
   private render(): void {
+    const hasModels = this.models.length > 0 || !!this.currentModel;
+    const modelOptionsHtml = hasModels
+      ? (this.models.length > 0 ? this.models : [this.currentModel!])
+          .map(
+            (m) =>
+              `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
+          )
+          .join('')
+      : `<option value="" disabled selected>-- No Model --</option>`;
+
+    const currentLvl = this.thinkingLevel || 'off';
+    const thinkingOptionsHtml = hasModels
+      ? `
+          <option value="off" ${currentLvl === 'off' ? 'selected' : ''}>🧠 Thinking: Off</option>
+          <option value="low" ${currentLvl === 'low' ? 'selected' : ''}>🧠 Thinking: Low</option>
+          <option value="medium" ${currentLvl === 'medium' ? 'selected' : ''}>🧠 Thinking: Medium</option>
+          <option value="high" ${currentLvl === 'high' ? 'selected' : ''}>🧠 Thinking: High</option>
+        `
+      : `<option value="" disabled selected>🧠 Thinking: --</option>`;
+
     this.container.innerHTML = `
       <div class="attachment-previews"></div>
       <div class="input-top-bar">
         <div class="input-selectors">
-          <select class="model-select" title="Select AI Model">
-            ${this.models
-              .map(
-                (m) =>
-                  `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
-              )
-              .join('')}
+          <select class="model-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Select AI Model' : 'No agent connected'}">
+            ${modelOptionsHtml}
           </select>
-          <select class="thinking-select" title="Thinking Level / Reasoning Effort">
-            <option value="off" ${this.thinkingLevel === 'off' ? 'selected' : ''}>🧠 Thinking: Off</option>
-            <option value="low" ${this.thinkingLevel === 'low' ? 'selected' : ''}>🧠 Thinking: Low</option>
-            <option value="medium" ${this.thinkingLevel === 'medium' ? 'selected' : ''}>🧠 Thinking: Medium</option>
-            <option value="high" ${this.thinkingLevel === 'high' ? 'selected' : ''}>🧠 Thinking: High</option>
+          <select class="thinking-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Thinking Level / Reasoning Effort' : 'No agent connected'}">
+            ${thinkingOptionsHtml}
           </select>
         </div>
         <div class="input-top-actions">
@@ -506,17 +516,68 @@ export class InputBoxComponent {
     this.tempDraft = '';
   }
 
-  public setModel(model: string): void {
+  public setModels(models: string[]): void {
+    this.models = [...models];
+    if (this.models.length > 0 && !this.currentModel) {
+      this.currentModel = this.models[0];
+    }
+    this.updateModelSelect();
+    this.updateThinkingSelect();
+  }
+
+  public setModel(model?: string): void {
     this.currentModel = model;
-    if (this.modelSelect) {
-      this.modelSelect.value = model;
+    if (model && !this.models.includes(model)) {
+      this.models.push(model);
+    }
+    this.updateModelSelect();
+    this.updateThinkingSelect();
+  }
+
+  public setThinkingLevel(level?: ThinkingLevel): void {
+    this.thinkingLevel = level;
+    this.updateThinkingSelect();
+  }
+
+  private updateModelSelect(): void {
+    if (!this.modelSelect) return;
+    const hasModels = this.models.length > 0 || !!this.currentModel;
+    this.modelSelect.disabled = !hasModels;
+    this.modelSelect.title = hasModels ? 'Select AI Model' : 'No agent connected';
+    if (hasModels) {
+      const list = this.models.length > 0 ? this.models : [this.currentModel!];
+      this.modelSelect.innerHTML = list
+        .map(
+          (m) =>
+            `<option value="${m}" ${m === this.currentModel ? 'selected' : ''}>${m}</option>`
+        )
+        .join('');
+      if (this.currentModel) {
+        this.modelSelect.value = this.currentModel;
+      }
+    } else {
+      this.modelSelect.innerHTML = '<option value="" disabled selected>-- No Model --</option>';
+      this.modelSelect.value = '';
     }
   }
 
-  public setThinkingLevel(level: ThinkingLevel): void {
-    this.thinkingLevel = level;
-    if (this.thinkingSelect) {
-      this.thinkingSelect.value = level;
+  private updateThinkingSelect(): void {
+    if (!this.thinkingSelect) return;
+    const hasModels = this.models.length > 0 || !!this.currentModel;
+    this.thinkingSelect.disabled = !hasModels;
+    this.thinkingSelect.title = hasModels ? 'Thinking Level / Reasoning Effort' : 'No agent connected';
+    if (hasModels) {
+      const lvl = this.thinkingLevel || 'off';
+      this.thinkingSelect.innerHTML = `
+        <option value="off" ${lvl === 'off' ? 'selected' : ''}>🧠 Thinking: Off</option>
+        <option value="low" ${lvl === 'low' ? 'selected' : ''}>🧠 Thinking: Low</option>
+        <option value="medium" ${lvl === 'medium' ? 'selected' : ''}>🧠 Thinking: Medium</option>
+        <option value="high" ${lvl === 'high' ? 'selected' : ''}>🧠 Thinking: High</option>
+      `;
+      this.thinkingSelect.value = lvl;
+    } else {
+      this.thinkingSelect.innerHTML = '<option value="" disabled selected>🧠 Thinking: --</option>';
+      this.thinkingSelect.value = '';
     }
   }
 

@@ -195,6 +195,28 @@ describe('T5: InputBoxComponent (Ergonomics, Dynamic Toggle, History, Multimodal
       thinkingSelect.dispatchEvent(new Event('change', { bubbles: true }));
       expect(onThinkingLevelChangeMock).toHaveBeenCalledWith('medium');
     });
+
+    it('should disable dropdowns and show placeholder when no agent models provided', () => {
+      const box = new InputBoxComponent({
+        container,
+        onSend: vi.fn(),
+        onCancel: vi.fn(),
+      });
+
+      const modelSelect = container.querySelector('select.model-select') as HTMLSelectElement;
+      const thinkingSelect = container.querySelector('select.thinking-select') as HTMLSelectElement;
+
+      expect(modelSelect.disabled).toBe(true);
+      expect(modelSelect.textContent).toContain('No Model');
+      expect(thinkingSelect.disabled).toBe(true);
+      expect(thinkingSelect.textContent).toContain('Thinking: --');
+
+      // Now set model dynamically when agent connects
+      box.setModel('gemini-2.0-flash');
+      expect(modelSelect.disabled).toBe(false);
+      expect(modelSelect.value).toBe('gemini-2.0-flash');
+      expect(thinkingSelect.disabled).toBe(false);
+    });
   });
 
   describe('Multimodal Attachments', () => {

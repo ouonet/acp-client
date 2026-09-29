@@ -209,6 +209,17 @@ export class WebviewApp {
       case 'PROCESS_STATUS_CHANGE': {
         const { agentId, status } = msg.payload;
         this.header.updateProcessStatus(agentId, status);
+        if (this.currentSnapshot) {
+          this.currentSnapshot.processStatuses[agentId] = status as any;
+          this.header.update(this.currentSnapshot);
+          if (this.currentSnapshot.activeSession?.agentId === agentId) {
+            const isRunning = status === 'running';
+            this.inputBox.setModel(isRunning ? this.currentSnapshot.activeSession.model : undefined);
+            this.inputBox.setThinkingLevel(
+              isRunning ? this.currentSnapshot.activeSession.thinkingLevel : undefined
+            );
+          }
+        }
         break;
       }
 
@@ -233,15 +244,19 @@ export class WebviewApp {
     // 2. Active Session & Messages
     if (snapshot.activeSession) {
       const s = snapshot.activeSession;
+      const isRunning = snapshot.processStatuses[s.agentId] === 'running';
       this.inputBox.setSessionId(s.id);
       this.inputBox.setStatus(s.status);
-      if (s.model) this.inputBox.setModel(s.model);
-      if (s.thinkingLevel) this.inputBox.setThinkingLevel(s.thinkingLevel);
+      this.inputBox.setModel(isRunning ? s.model : undefined);
+      this.inputBox.setThinkingLevel(isRunning ? s.thinkingLevel : undefined);
 
       this.chatView.setMessages(s.messages);
     } else {
       this.chatView.setMessages([]);
       this.inputBox.setStatus('idle');
+      this.inputBox.setSessionId('');
+      this.inputBox.setModel(undefined);
+      this.inputBox.setThinkingLevel(undefined);
     }
 
     // 3. Input History
