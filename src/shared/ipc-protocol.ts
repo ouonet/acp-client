@@ -39,7 +39,7 @@ export type WebviewAction =
       payload: {
         sessionId: string;
         requestId: string;
-        decision: 'allow' | 'deny';
+        decision: 'allow' | 'deny' | 'always_allow_session';
         options?: any;
       };
     }

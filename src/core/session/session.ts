@@ -46,7 +46,11 @@ export interface ISession {
 
   prompt(text: string | ContentBlock[], options?: PromptOptions): Promise<void>;
   cancel(): Promise<void>;
-  respondPermission(requestId: string, decision: 'allow' | 'deny', options?: any): Promise<void>;
+  respondPermission(
+    requestId: string,
+    decision: 'allow' | 'deny' | 'always_allow_session',
+    options?: any
+  ): Promise<void>;
   onEvent(listener: (event: SessionEvent) => void): Disposable;
   serialize(): SessionData;
 }
@@ -67,9 +71,11 @@ export class Session implements ISession {
   private readonly adapter: AcpClientAdapter;
   private readonly onSave?: (session: Session) => Promise<void>;
   private readonly eventListeners = new Set<(event: SessionEvent) => void>();
+  private readonly allowedToolsInSession = new Set<string>();
 
   private pendingApproval?: {
     requestId: string;
+    toolTitle: string;
     resolve: (val: any) => void;
     reject: (err: any) => void;
   };
@@ -169,6 +175,16 @@ export class Session implements ISession {
   }
 
   public requestApproval(requestId: string, toolTitle: string, options: any[]): Promise<any> {
+    if (this.allowedToolsInSession.has(toolTitle)) {
+      const allowOpt = options.find((o) => o.kind?.startsWith('allow')) || options[0];
+      return Promise.resolve({
+        outcome: {
+          outcome: 'selected',
+          optionId: allowOpt?.optionId || 'allow',
+        },
+      });
+    }
+
     this.setStatus('waiting_approval');
 
     this.emitEvent({
@@ -178,11 +194,15 @@ export class Session implements ISession {
     });
 
     return new Promise((resolve, reject) => {
-      this.pendingApproval = { requestId, resolve, reject };
+      this.pendingApproval = { requestId, toolTitle, resolve, reject };
     });
   }
 
-  public async respondPermission(requestId: string, decision: 'allow' | 'deny', options?: any): Promise<void> {
+  public async respondPermission(
+    requestId: string,
+    decision: 'allow' | 'deny' | 'always_allow_session',
+    options?: any
+  ): Promise<void> {
     if (this.status !== 'waiting_approval') {
       throw new SessionError(this.id, 'Cannot respond to permission when not in waiting_approval state');
     }
@@ -191,14 +211,19 @@ export class Session implements ISession {
       throw new SessionError(this.id, `No pending approval request found for id: ${requestId}`);
     }
 
-    const { resolve } = this.pendingApproval;
+    const { resolve, toolTitle } = this.pendingApproval;
     this.pendingApproval = undefined;
+
+    if (decision === 'always_allow_session') {
+      this.allowedToolsInSession.add(toolTitle);
+    }
 
     this.setStatus('streaming');
 
+    const isAllow = decision === 'allow' || decision === 'always_allow_session';
     resolve({
       outcome: {
-        outcome: decision === 'allow' ? 'selected' : 'cancelled',
+        outcome: isAllow ? 'selected' : 'cancelled',
         ...options,
       },
     });

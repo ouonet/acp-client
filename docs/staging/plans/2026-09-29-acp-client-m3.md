@@ -11,7 +11,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/webview/diff-viewer.test.ts` passes; diff lines parsed accurately; VS Code diff action dispatches with correct URI pair.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-05-交互式代码-diff-审查与写入-interactive-diff-review
 
-- [ ] T2: Three-Tier Permission Policy Gate & Session Whitelisting
+- [x] T2: Three-Tier Permission Policy Gate & Session Whitelisting
   goal: Implement three-tier permission options (`allow_once`, `always_allow_session`, `deny`) in Session FSM and Webview UI. When `always_allow_session` is selected, subsequent tool requests for the same tool name in the session auto-approve without UI blocking.
   files: src/core/session/session.ts, src/webview/components/chat-view.ts, test/core/permission-policy.test.ts, test/webview/permission-gate.test.ts
   acceptance: `npx vitest run test/core/permission-policy.test.ts` passes; auto-approve skips prompt for whitelisted tools; deny passes rejection reason to Agent.

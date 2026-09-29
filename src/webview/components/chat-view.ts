@@ -247,13 +247,25 @@ export class ChatViewComponent {
     for (const opt of params.options) {
       const btn = card.querySelector(`[data-option="${opt.optionId}"]`);
       btn?.addEventListener('click', () => {
-        const isAllow = opt.kind.startsWith('allow');
+        let decision: 'allow' | 'deny' | 'always_allow_session';
+        if (
+          opt.kind === 'allow_always' ||
+          opt.optionId.includes('always') ||
+          opt.name.includes('Always')
+        ) {
+          decision = 'always_allow_session';
+        } else if (opt.kind.startsWith('allow')) {
+          decision = 'allow';
+        } else {
+          decision = 'deny';
+        }
+
         this.onAction({
           type: 'RESPOND_PERMISSION',
           payload: {
             sessionId: params.sessionId,
             requestId: params.requestId,
-            decision: isAllow ? 'allow' : 'deny',
+            decision,
             options: { optionId: opt.optionId },
           },
         });
