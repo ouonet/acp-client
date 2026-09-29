@@ -4,6 +4,7 @@
  */
 
 import type { WebviewStateSnapshot } from '../../shared/ipc-protocol';
+import { ICONS } from './icons';
 
 export interface HeaderComponentOptions {
   container: HTMLElement;
@@ -48,13 +49,13 @@ export class HeaderComponent {
         </div>
         <div class="header-right">
           <button class="icon-btn" data-action="fork" title="Fork Session (Branch Conversation)">
-            <span>🔀</span>
+            ${ICONS.fork}
           </button>
           <button class="icon-btn" data-action="toggle-config" title="Agent Settings">
-            <span>⚙</span>
+            ${ICONS.settings}
           </button>
           <button class="icon-btn" data-action="toggle-history" title="History Drawer">
-            <span>🕒</span>
+            ${ICONS.history}
           </button>
         </div>
       </header>

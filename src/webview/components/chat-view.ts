@@ -6,6 +6,7 @@
 import type { MessageChunk, ContentBlock, ToolCall } from '../../core/types/session';
 import { ThinkingBlockComponent } from './thinking-block';
 import { DiffViewerComponent } from './diff-viewer';
+import { ICONS } from './icons';
 
 export interface ChatViewOptions {
   container: HTMLElement;
@@ -37,8 +38,8 @@ export function renderMarkdown(markdown: string): string {
         <div class="code-header">
           <span class="code-lang">${cleanLang}</span>
           <div class="code-header-actions">
-            <button class="code-action-btn" data-action="copy-code">Copy</button>
-            <button class="code-action-btn" data-action="insert-code">Insert</button>
+            <button class="code-action-btn" data-action="copy-code">${ICONS.copy}<span>Copy</span></button>
+            <button class="code-action-btn" data-action="insert-code">${ICONS.insert}<span>Insert</span></button>
           </div>
         </div>
         <code>${escapedCode}</code>
@@ -233,7 +234,8 @@ export class ChatViewComponent {
 
     card.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-        <span>🔐 Permission Required</span>
+        ${ICONS.lock}
+        <span>Permission Required</span>
       </div>
       <div style="font-size: 12px; color: var(--fg-muted); margin-bottom: 10px;">
         Tool: <strong>${escapeHtml(params.toolTitle)}</strong>
@@ -302,8 +304,8 @@ export class ChatViewComponent {
 
     card.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-        <div>
-          <span style="margin-right: 4px;">🔧</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          ${ICONS.tool}
           <span class="tool-name" style="font-weight: 600;">${escapeHtml(tc.name)}</span>
         </div>
         <span class="tool-status" style="font-size: 10px; text-transform: uppercase; color: var(--fg-muted);">${tc.status}</span>

@@ -270,4 +270,81 @@ describe('T5: InputBoxComponent (Ergonomics, Dynamic Toggle, History, Multimodal
       expect(previewArea.children.length).toBe(0);
     });
   });
+
+  describe('Ergonomic Layout & SVG Iconography (M4)', () => {
+    it('should position textarea on top and toolbar on bottom with attach on far left, models in toolbar, and send on far right', () => {
+      new InputBoxComponent(defaultProps);
+
+      const inputCard = container.querySelector('.input-card') as HTMLElement;
+      expect(inputCard).not.toBeNull();
+
+      const textareaWrapper = inputCard.querySelector('.input-box-wrapper') as HTMLElement;
+      const toolbar = inputCard.querySelector('.input-toolbar') as HTMLElement;
+      expect(textareaWrapper).not.toBeNull();
+      expect(toolbar).not.toBeNull();
+
+      // Check vertical order: textarea wrapper is before toolbar
+      expect(textareaWrapper.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      // Check toolbar-left contains attach button and model/thinking selectors
+      const toolbarLeft = toolbar.querySelector('.toolbar-left') as HTMLElement;
+      const toolbarRight = toolbar.querySelector('.toolbar-right') as HTMLElement;
+      expect(toolbarLeft).not.toBeNull();
+      expect(toolbarRight).not.toBeNull();
+
+      const attachBtn = toolbarLeft.querySelector('.btn-attach') as HTMLButtonElement;
+      const modelSelect = toolbarLeft.querySelector('select.model-select') as HTMLSelectElement;
+      const thinkingSelect = toolbarLeft.querySelector('select.thinking-select') as HTMLSelectElement;
+      expect(attachBtn).not.toBeNull();
+      expect(modelSelect).not.toBeNull();
+      expect(thinkingSelect).not.toBeNull();
+
+      // Attach button is the first child in toolbar-left (far left)
+      expect(toolbarLeft.firstElementChild).toBe(attachBtn);
+
+      // Check toolbar-right contains the Send/Stop button (far right)
+      const toggleBtn = toolbarRight.querySelector('.btn-toggle-action') as HTMLButtonElement;
+      expect(toggleBtn).not.toBeNull();
+    });
+
+    it('should use professional SVG icons instead of emojis', () => {
+      new InputBoxComponent(defaultProps);
+
+      // No emojis in toggle button or attach button
+      const attachBtn = container.querySelector('.btn-attach') as HTMLElement;
+      const sendBtn = container.querySelector('.btn-toggle-action') as HTMLElement;
+
+      expect(attachBtn.querySelector('svg.svg-icon')).not.toBeNull();
+      expect(attachBtn.textContent).not.toContain('📎');
+
+      expect(sendBtn.querySelector('svg.svg-icon')).not.toBeNull();
+      expect(sendBtn.textContent).not.toContain('⏎');
+      expect(sendBtn.textContent).not.toContain('⏹');
+    });
+
+    it('should adjust textarea height when multiline content is entered and reset on send', () => {
+      new InputBoxComponent(defaultProps);
+      const textarea = container.querySelector('textarea.prompt-input') as HTMLTextAreaElement;
+
+      // Mock scrollHeight
+      Object.defineProperty(textarea, 'scrollHeight', {
+        configurable: true,
+        get: () => (textarea.value.includes('\n') ? 96 : 36),
+      });
+
+      textarea.value = 'Single line';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(textarea.style.height).toBe('36px');
+
+      textarea.value = 'Line 1\nLine 2\nLine 3\nLine 4';
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(textarea.style.height).toBe('96px');
+
+      // Submit resets height
+      const button = container.querySelector('.btn-toggle-action') as HTMLButtonElement;
+      button.click();
+      expect(textarea.value).toBe('');
+      expect(textarea.style.height).toBe('36px');
+    });
+  });
 });

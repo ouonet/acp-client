@@ -4,6 +4,7 @@
  */
 
 import type { SessionStatus, ThinkingLevel } from '../../core/types/session';
+import { ICONS } from './icons';
 
 export interface AttachmentItem {
   id: string;
@@ -110,42 +111,54 @@ export class InputBoxComponent {
     const currentLvl = this.thinkingLevel || 'off';
     const thinkingOptionsHtml = hasModels
       ? `
-          <option value="off" ${currentLvl === 'off' ? 'selected' : ''}>🧠 Thinking: Off</option>
-          <option value="low" ${currentLvl === 'low' ? 'selected' : ''}>🧠 Thinking: Low</option>
-          <option value="medium" ${currentLvl === 'medium' ? 'selected' : ''}>🧠 Thinking: Medium</option>
-          <option value="high" ${currentLvl === 'high' ? 'selected' : ''}>🧠 Thinking: High</option>
+          <option value="off" ${currentLvl === 'off' ? 'selected' : ''}>Thinking: Off</option>
+          <option value="low" ${currentLvl === 'low' ? 'selected' : ''}>Thinking: Low</option>
+          <option value="medium" ${currentLvl === 'medium' ? 'selected' : ''}>Thinking: Medium</option>
+          <option value="high" ${currentLvl === 'high' ? 'selected' : ''}>Thinking: High</option>
         `
-      : `<option value="" disabled selected>🧠 Thinking: --</option>`;
+      : `<option value="" disabled selected>Thinking: --</option>`;
 
     this.container.innerHTML = `
       <div class="attachment-previews"></div>
-      <div class="input-top-bar">
-        <div class="input-selectors">
-          <select class="model-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Select AI Model' : 'No agent connected'}">
-            ${modelOptionsHtml}
-          </select>
-          <select class="thinking-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Thinking Level / Reasoning Effort' : 'No agent connected'}">
-            ${thinkingOptionsHtml}
-          </select>
+      <div class="input-card">
+        <div class="input-box-wrapper" style="position: relative;">
+          <div class="slash-commands-popup" style="display: none;"></div>
+          <textarea
+            class="prompt-input"
+            placeholder="Ask a question or describe a task... (↑/↓ for history, / for skills, Shift+Enter for newline)"
+            rows="1"
+          ></textarea>
         </div>
-        <div class="input-top-actions">
-          <button class="btn-attach" type="button" title="Attach Image or File">📎 Attach</button>
-          <input type="file" class="file-attach-input" accept="image/*" style="display: none;" />
-        </div>
-      </div>
-      <div class="input-box-wrapper" style="position: relative;">
-        <div class="slash-commands-popup" style="display: none;"></div>
-        <textarea
-          class="prompt-input"
-          placeholder="Ask a question or describe a task... (↑/↓ to recall history, / for commands)"
-          rows="1"
-        ></textarea>
-        <div class="input-actions">
-          <button
-            class="btn-toggle-action ${this.isBusy() ? 'stop' : 'send'}"
-            type="button"
-            title="${this.isBusy() ? 'Stop agent generation' : 'Send prompt'}"
-          >${this.isBusy() ? '⏹ Stop' : '⏎ Send'}</button>
+        <div class="input-toolbar">
+          <div class="toolbar-left">
+            <button class="btn-attach" type="button" title="Attach Image or File">
+              ${ICONS.attach}
+              <span class="btn-label">Attach</span>
+            </button>
+            <input type="file" class="file-attach-input" accept="image/*" style="display: none;" />
+            <div class="select-wrapper model-select-wrapper">
+              <select class="model-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Select AI Model' : 'No agent connected'}">
+                ${modelOptionsHtml}
+              </select>
+              <span class="select-chevron">${ICONS.chevronDown}</span>
+            </div>
+            <div class="select-wrapper thinking-select-wrapper">
+              <span class="select-icon">${ICONS.brain}</span>
+              <select class="thinking-select" ${hasModels ? '' : 'disabled'} title="${hasModels ? 'Thinking Level / Reasoning Effort' : 'No agent connected'}">
+                ${thinkingOptionsHtml}
+              </select>
+              <span class="select-chevron">${ICONS.chevronDown}</span>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button
+              class="btn-toggle-action ${this.isBusy() ? 'stop' : 'send'}"
+              type="button"
+              title="${this.isBusy() ? 'Stop agent generation' : 'Send prompt'}"
+            >
+              ${this.isBusy() ? `${ICONS.stop} <span>Stop</span>` : `${ICONS.send} <span>Send</span>`}
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -416,7 +429,9 @@ export class InputBoxComponent {
 
   private adjustHeight(): void {
     this.textarea.style.height = 'auto';
-    this.textarea.style.height = `${Math.min(this.textarea.scrollHeight, 160)}px`;
+    const targetHeight = Math.min(Math.max(this.textarea.scrollHeight, 36), 240);
+    this.textarea.style.height = `${targetHeight}px`;
+    this.textarea.style.overflowY = this.textarea.scrollHeight > 240 ? 'auto' : 'hidden';
   }
 
   private readFile(file: File): void {
@@ -452,8 +467,9 @@ export class InputBoxComponent {
       const chip = document.createElement('div');
       chip.className = 'attachment-chip';
       chip.innerHTML = `
-        <span class="attachment-name">🖼 ${att.name || 'image'}</span>
-        <button class="remove-attachment" type="button" data-id="${att.id}" title="Remove attachment">✕</button>
+        <span class="attachment-icon">${ICONS.image}</span>
+        <span class="attachment-name">${this.escapeHtml(att.name || 'image')}</span>
+        <button class="remove-attachment" type="button" data-id="${att.id}" title="Remove attachment">${ICONS.close}</button>
       `;
 
       chip.querySelector('.remove-attachment')?.addEventListener('click', () => {
@@ -486,7 +502,8 @@ export class InputBoxComponent {
     this.historyIndex = -1;
     this.attachments = [];
     this.renderAttachments();
-    this.adjustHeight();
+    this.textarea.style.height = '36px';
+    this.textarea.style.overflowY = 'hidden';
   }
 
   public setStatus(status: SessionStatus): void {
@@ -496,12 +513,12 @@ export class InputBoxComponent {
     if (busy) {
       this.toggleButton.classList.remove('send');
       this.toggleButton.classList.add('stop');
-      this.toggleButton.textContent = '⏹ Stop';
+      this.toggleButton.innerHTML = `${ICONS.stop} <span>Stop</span>`;
       this.toggleButton.title = 'Stop agent generation';
     } else {
       this.toggleButton.classList.remove('stop');
       this.toggleButton.classList.add('send');
-      this.toggleButton.textContent = '⏎ Send';
+      this.toggleButton.innerHTML = `${ICONS.send} <span>Send</span>`;
       this.toggleButton.title = 'Send prompt';
     }
   }
@@ -569,16 +586,24 @@ export class InputBoxComponent {
     if (hasModels) {
       const lvl = this.thinkingLevel || 'off';
       this.thinkingSelect.innerHTML = `
-        <option value="off" ${lvl === 'off' ? 'selected' : ''}>🧠 Thinking: Off</option>
-        <option value="low" ${lvl === 'low' ? 'selected' : ''}>🧠 Thinking: Low</option>
-        <option value="medium" ${lvl === 'medium' ? 'selected' : ''}>🧠 Thinking: Medium</option>
-        <option value="high" ${lvl === 'high' ? 'selected' : ''}>🧠 Thinking: High</option>
+        <option value="off" ${lvl === 'off' ? 'selected' : ''}>Thinking: Off</option>
+        <option value="low" ${lvl === 'low' ? 'selected' : ''}>Thinking: Low</option>
+        <option value="medium" ${lvl === 'medium' ? 'selected' : ''}>Thinking: Medium</option>
+        <option value="high" ${lvl === 'high' ? 'selected' : ''}>Thinking: High</option>
       `;
       this.thinkingSelect.value = lvl;
     } else {
-      this.thinkingSelect.innerHTML = '<option value="" disabled selected>🧠 Thinking: --</option>';
+      this.thinkingSelect.innerHTML = '<option value="" disabled selected>Thinking: --</option>';
       this.thinkingSelect.value = '';
     }
+  }
+
+  private escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   public focus(): void {

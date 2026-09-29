@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-09-29 - Milestone M4 (UI Layout Ergonomics, Multiline Auto-Grow & SVG Iconography)
+
+### Added
+- **Modern Unified Chat Input Card Layout**:
+  - Reorganized input dock into a streamlined modern input card where the typing area sits prominently on top and toolbars sit comfortably on the bottom shelf.
+  - Placed multimodal `[📎 Attach]` button on the far left of the bottom toolbar.
+  - Integrated Model selector and Thinking effort selector dropdowns directly into the bottom toolbar with custom chevron indicators.
+  - Positioned the dynamic Send/Stop toggle button on the far right of the bottom toolbar.
+- **Multiline Auto-Growing Textarea**:
+  - Smooth dynamic vertical expansion from 36px up to 240px as lines increase.
+  - Preserved `Enter` to send and `Shift + Enter` for newlines.
+  - Automatic scrollbar engagement beyond 240px, resetting to compact 36px upon sending.
+- **Professional Themeable SVG Icon Library**:
+  - Replaced childish emoji icons (`🔀`, `⚙`, `🕒`, `📎`, `🧠`, `⏹`, `⏎`, `🖼`, `✕`, `📋`, `📥`, `🔌`, `▾`, `▸`, `⚡`) with minimalist vector SVGs in `src/webview/components/icons.ts`.
+  - Icons automatically inherit VS Code theme colors (`currentColor`) across all light, dark, and high-contrast themes.
+  - Upgraded Header, ChatView, ThinkingBlock, McpInspector, and InputBox with crisp iconography.
+- **Extension Brand Identity & High-Tech Icon**:
+  - Designed glowing neural nexus / terminal bracket brand icon (`media/icon.svg` & `media/icon.png`).
+  - Registered official extension icon in `package.json` for VS Code Extensions view and marketplace packaging.
+
 ## [0.3.0] - 2026-09-29 - Milestone M3 (Diff Review, Permissions, MCP Inspector, Skills & Chat Participant)
 
 ### Added

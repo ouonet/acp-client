@@ -3,6 +3,7 @@
  */
 
 import type { McpServerConfig, McpToolInfo } from '../../core/types/config';
+import { ICONS } from './icons';
 
 export interface McpInspectorOptions {
   container: HTMLElement;
@@ -55,8 +56,11 @@ export class McpInspectorComponent {
   private render(): void {
     this.container.innerHTML = `
       <div class="drawer-header">
-        <div class="drawer-title">🔌 MCP Server & Tool Inspector</div>
-        <button class="drawer-close-btn" type="button" title="Close Drawer">✕</button>
+        <div class="drawer-title" style="display: flex; align-items: center; gap: 8px;">
+          ${ICONS.plug}
+          <span>MCP Server & Tool Inspector</span>
+        </div>
+        <button class="drawer-close-btn" type="button" title="Close Drawer">${ICONS.close}</button>
       </div>
       <div class="drawer-body">
         <div class="mcp-servers-bar">
@@ -93,7 +97,7 @@ export class McpInspectorComponent {
                   />
                   <strong class="tool-name">${escapeHtml(t.name)}</strong>
                 </label>
-                <button class="btn-test-mcp-tool" type="button" title="Test tool call">⚡ Test Tool Call</button>
+                <button class="btn-test-mcp-tool" type="button" title="Test tool call" style="display: flex; align-items: center; gap: 4px;">${ICONS.bolt} <span>Test Tool Call</span></button>
               </div>
               <div class="mcp-tool-desc">${escapeHtml(t.description || 'No description provided')}</div>
               <div class="mcp-tool-params">

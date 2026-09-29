@@ -3,6 +3,8 @@
  * Displays chain-of-thought tokens in a clean expandable card.
  */
 
+import { ICONS } from './icons';
+
 export interface ThinkingBlockOptions {
   container: HTMLElement;
   thinking: string;
@@ -33,7 +35,11 @@ export class ThinkingBlockComponent {
 
     card.innerHTML = `
       <div class="thinking-header">
-        <span><span class="thinking-toggle-icon">${this.expanded ? '▾' : '▸'}</span> Thinking (${durationLabel})</span>
+        <span class="thinking-header-left">
+          <span class="thinking-toggle-icon">${this.expanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
+          <span class="thinking-brain-icon">${ICONS.brain}</span>
+          <span class="thinking-title">Thinking (${durationLabel})</span>
+        </span>
       </div>
       <div class="thinking-body">${this.escapeHtml(this.thinking)}</div>
     `;
@@ -58,7 +64,7 @@ export class ThinkingBlockComponent {
 
       const icon = this.element.querySelector('.thinking-toggle-icon');
       if (icon) {
-        icon.textContent = this.expanded ? '▾' : '▸';
+        icon.innerHTML = this.expanded ? ICONS.chevronDown : ICONS.chevronRight;
       }
     }
   }
