@@ -8,8 +8,50 @@
     "vscode": "^1.90.0"
   },
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:acpClient.chatView"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "acpClientContainer",
+          "title": "ACP Client",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "acpClientContainer": [
+        {
+          "type": "webview",
+          "id": "acpClient.chatView",
+          "name": "Cockpit"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "acpClient.openChat",
+        "title": "ACP: Open Chat Cockpit",
+        "category": "ACP"
+      },
+      {
+        "command": "acpClient.newSession",
+        "title": "ACP: New Chat Session",
+        "category": "ACP"
+      },
+      {
+        "command": "acpClient.forkSession",
+        "title": "ACP: Fork Current Session",
+        "category": "ACP"
+      }
+    ]
+  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "build:prod": "tsc --noEmit && node scripts/build.mjs --production",
+    "watch": "node scripts/build.mjs --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src test",

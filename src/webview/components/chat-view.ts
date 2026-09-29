@@ -75,11 +75,90 @@ function escapeHtml(str: string): string {
 export class ChatViewComponent {
   private readonly container: HTMLElement;
   private readonly onAction: (action: any) => void;
+  private currentAssistantBubble: HTMLElement | null = null;
+  private currentThinkingContainer: HTMLElement | null = null;
+  private currentRawContent = '';
 
   constructor(options: ChatViewOptions) {
     this.container = options.container;
     this.onAction = options.onAction;
     this.bindGlobalEvents();
+  }
+
+  public setMessages(messages: MessageChunk[]): void {
+    this.currentAssistantBubble = null;
+    this.currentThinkingContainer = null;
+    this.currentRawContent = '';
+    this.renderMessages(messages);
+  }
+
+  public appendAssistantChunk(chunk: string): void {
+    if (!this.currentAssistantBubble) {
+      const row = document.createElement('div');
+      row.className = 'message-row assistant';
+      this.currentAssistantBubble = document.createElement('div');
+      this.currentAssistantBubble.className = 'message-bubble';
+      row.appendChild(this.currentAssistantBubble);
+      this.container.appendChild(row);
+      this.currentRawContent = '';
+    }
+
+    this.currentRawContent += chunk;
+    this.currentAssistantBubble.innerHTML = renderMarkdown(this.currentRawContent);
+    this.scrollToBottom();
+  }
+
+  public appendThinkingChunk(thinking: string): void {
+    let row = this.container.querySelector('.message-row.assistant:last-child') as HTMLElement;
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'message-row assistant';
+      this.container.appendChild(row);
+    }
+
+    if (!this.currentThinkingContainer) {
+      this.currentThinkingContainer = document.createElement('div');
+      row.insertBefore(this.currentThinkingContainer, row.firstChild);
+    }
+
+    new ThinkingBlockComponent({
+      container: this.currentThinkingContainer,
+      thinking,
+    });
+    this.scrollToBottom();
+  }
+
+  public appendToolCall(tc: ToolCall): void {
+    let row = this.container.querySelector('.message-row.assistant:last-child') as HTMLElement;
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'message-row assistant';
+      this.container.appendChild(row);
+    }
+    const el = this.createToolCallElement(tc);
+    el.setAttribute('data-tool-id', tc.id);
+    row.appendChild(el);
+    this.scrollToBottom();
+  }
+
+  public updateToolResult(id: string, output: any, status: string = 'completed'): void {
+    const card = this.container.querySelector(`[data-tool-id="${id}"]`);
+    if (card) {
+      const statusSpan = card.querySelector('.tool-status');
+      if (statusSpan) {
+        statusSpan.textContent = status;
+      }
+      if (output) {
+        const outPre = document.createElement('pre');
+        outPre.style.cssText = 'font-size: 11px; color: var(--fg-muted); margin-top: 4px; overflow-x: auto;';
+        outPre.textContent = typeof output === 'string' ? output : JSON.stringify(output, null, 2);
+        card.appendChild(outPre);
+      }
+    }
+  }
+
+  public handlePermissionRequest(params: PermissionPromptParams): void {
+    this.renderPermissionPrompt(params);
   }
 
   public renderMessages(messages: MessageChunk[]): void {

@@ -40,6 +40,8 @@ export class ConfigPanelComponent {
             transport: 'stdio',
             command: 'npx',
             args: ['@agentclientprotocol/claude-agent-acp'],
+            env: {},
+            enabled: true,
           },
         ];
     this.activeConfigId = options.activeAgentId || this.configs[0].id;
@@ -86,6 +88,8 @@ export class ConfigPanelComponent {
         transport: 'stdio',
         command: '',
         args: [],
+        env: {},
+        enabled: true,
       }
     );
   }
@@ -121,7 +125,7 @@ export class ConfigPanelComponent {
       command: commandInput?.value || '',
       args: argsInput?.value ? argsInput.value.split(',').map((s) => s.trim()).filter(Boolean) : [],
       cwd: cwdInput?.value ? cwdInput.value.trim() : undefined,
-      env: Object.keys(env).length > 0 ? env : undefined,
+      env,
       autoApprove: autoApprove.length > 0 ? autoApprove : undefined,
     };
   }
@@ -264,6 +268,8 @@ export class ConfigPanelComponent {
         transport: 'stdio',
         command: '',
         args: [],
+        env: {},
+        enabled: true,
       };
       this.configs.push(newConfig);
       this.activeConfigId = newId;

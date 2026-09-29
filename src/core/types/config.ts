@@ -17,6 +17,7 @@ export interface AgentConfig {
   defaultModel?: string;
   supportsThinking?: boolean;
   mcpServerIds?: string[];
+  autoApprove?: string[];
 }
 
 export interface McpServerConfig {

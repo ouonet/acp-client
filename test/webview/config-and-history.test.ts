@@ -16,6 +16,7 @@ describe('T6: ConfigPanelComponent & HistoryDrawerComponent', () => {
     command: 'npx',
     args: ['@agentclientprotocol/claude-agent-acp'],
     env: { ANTHROPIC_API_KEY: 'test-key' },
+    enabled: true,
     autoApprove: ['read_file'],
   };
 

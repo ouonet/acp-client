@@ -41,7 +41,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: Config panel sends ping test action and displays result dot/logs; history drawer triggers fork action with message index and renders lineage tree.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-01-agent-视觉化配置与健康探测-visual-agent-configuration--health-probe
 
-- [ ] T7: Webview Bundler & Full M2 End-to-End UI Verification
+- [x] T7: Webview Bundler & Full M2 End-to-End UI Verification
   goal: Setup esbuild bundling scripts for both extension host and webview app, run full test suite with 100% green coverage, and verify production build artifact packaging.
   files: scripts/build.mjs, package.json
   acceptance: `npm run build && npm test && npm run lint` succeeds with zero errors, producing deployable `dist/extension.js` and `dist/webview.js`.
