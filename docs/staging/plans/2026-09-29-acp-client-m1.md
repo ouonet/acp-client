@@ -35,7 +35,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/acp-client-adapter.test.ts` passes with mock stdio streams (PassThrough) proving initialize handshake and event parsing.
   spec: docs/staging/specs/2026-09-29-acp-client.md#architecture
 
-- [ ] T6: Multi-Session Hub & Session Forking Engine
+- [x] T6: Multi-Session Hub & Session Forking Engine
   goal: Implement Session FSM (idle | streaming | waiting_approval | error) and SessionHub with concurrent execution, crash cascade, and immutable session forking.
   files: src/core/session/session.ts, src/core/session/session-hub.ts, test/core/session-hub.test.ts
   acceptance: `npx vitest run test/core/session-hub.test.ts` passes all tests verifying parallel session dispatch, crash cascade, and deep-clone fork isolation.
