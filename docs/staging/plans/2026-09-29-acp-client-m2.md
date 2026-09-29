@@ -17,7 +17,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/vscode/acp-view-provider.test.ts` passes with mocked Webview testing bidirectional message handling and state broadcasting.
   spec: docs/staging/specs/2026-09-29-acp-client.md#architecture
 
-- [ ] T3: Webview UI Shell, Modern Styling & Header Controls
+- [x] T3: Webview UI Shell, Modern Styling & Header Controls
   goal: Implement Webview HTML shell and CSS design system using native VS Code theme tokens (`--vscode-*`), top status header with live Agent indicator (●/⚪/🔴), Model selector, Thinking level selector, and Header Action buttons (`[🔀 Fork]`, `[⚙ Config]`, `[🕒 History]`).
   files: src/webview/index.html, src/webview/style.css, src/webview/components/header.ts, test/webview/header.test.ts
   acceptance: Header updates status indicator on process events, switches models and thinking levels, and toggles config/history drawers.

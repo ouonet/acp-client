@@ -1,0 +1,425 @@
+/* ===================================================================
+   VS Code ACP Client Cockpit Theme & Design System
+   Rich Aesthetics: Glassmorphism, Fluid Transitions & VS Code Tokens
+   =================================================================== */
+
+:root {
+  --bg-primary: var(--vscode-editor-background, #1e1e2e);
+  --fg-primary: var(--vscode-editor-foreground, #cdd6f4);
+  --fg-muted: var(--vscode-descriptionForeground, #a6adc8);
+  --border-subtle: var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  --card-bg: var(--vscode-sideBar-background, rgba(30, 30, 46, 0.7));
+  --accent-color: var(--vscode-button-background, #89b4fa);
+  --accent-fg: var(--vscode-button-foreground, #11111b);
+  --accent-hover: var(--vscode-button-hoverBackground, #b4befe);
+  --thinking-bg: rgba(137, 180, 250, 0.06);
+  --thinking-border: rgba(137, 180, 250, 0.2);
+  --status-running: #a6e3a1;
+  --status-stopped: #6c7086;
+  --status-error: #f38ba8;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--vscode-font-size, 13px);
+  color: var(--fg-primary);
+  background-color: var(--bg-primary);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: text;
+}
+
+/* Header Bar */
+.acp-header {
+  height: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  z-index: 10;
+}
+
+.header-left, .header-center, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--status-stopped);
+  transition: all 0.3s ease;
+}
+
+.status-dot.running {
+  background-color: var(--status-running);
+  box-shadow: 0 0 8px var(--status-running);
+}
+
+.status-dot.stopped {
+  background-color: var(--status-stopped);
+}
+
+.status-dot.error {
+  background-color: var(--status-error);
+  box-shadow: 0 0 8px var(--status-error);
+  animation: pulse-error 1.5s infinite;
+}
+
+@keyframes pulse-error {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+.agent-name {
+  font-weight: 600;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.model-badge, .thinking-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--fg-muted);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Icon Buttons */
+.icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: var(--fg-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Main Container */
+.main-content {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.chat-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Message Cards */
+.message-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.message-row.user {
+  align-self: flex-end;
+  max-width: 85%;
+}
+
+.message-row.assistant {
+  align-self: flex-start;
+  max-width: 100%;
+}
+
+.message-bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.message-row.user .message-bubble {
+  background: var(--accent-color);
+  color: var(--accent-fg);
+  font-weight: 500;
+  border-bottom-right-radius: 2px;
+}
+
+.message-row.assistant .message-bubble {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-bottom-left-radius: 2px;
+}
+
+/* Thinking Block */
+.thinking-card {
+  border: 1px solid var(--thinking-border);
+  background: var(--thinking-bg);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+}
+
+.thinking-header {
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--fg-muted);
+  user-select: none;
+}
+
+.thinking-header:hover {
+  color: var(--fg-primary);
+}
+
+.thinking-body {
+  padding: 8px 10px;
+  border-top: 1px dashed var(--thinking-border);
+  font-size: 12px;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  font-family: var(--vscode-editor-font-family, monospace);
+  display: none;
+}
+
+.thinking-card.expanded .thinking-body {
+  display: block;
+}
+
+/* Code Blocks */
+pre.code-block-wrapper {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.code-header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.code-action-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-muted);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.code-action-btn:hover {
+  color: var(--fg-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+pre code {
+  display: block;
+  padding: 10px;
+  overflow-x: auto;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Floating Input Dock */
+.input-dock {
+  padding: 12px 16px;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.input-selectors {
+  display: flex;
+  gap: 8px;
+}
+
+.input-selectors select {
+  background: var(--card-bg);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 6px;
+  font-size: 11px;
+  outline: none;
+}
+
+.input-box-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-box-wrapper:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+textarea.prompt-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--fg-primary);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.4;
+  max-height: 160px;
+  min-height: 24px;
+}
+
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Send / Stop Dynamic Toggle Button */
+.btn-toggle-action {
+  height: 32px;
+  min-width: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-toggle-action.send {
+  background: var(--accent-color);
+  color: var(--accent-fg);
+}
+
+.btn-toggle-action.send:hover {
+  background: var(--accent-hover);
+}
+
+.btn-toggle-action.stop {
+  background: var(--status-error);
+  color: #fff;
+  animation: pulse-stop 1.8s infinite;
+}
+
+@keyframes pulse-stop {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(243, 139, 168, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(243, 139, 168, 0); }
+}
+
+/* Slide-over Drawer (Config & History) */
+.drawer-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  background: var(--bg-primary);
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+}
+
+.drawer-overlay.open {
+  display: flex;
+  animation: slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
