@@ -11,3 +11,4 @@ export * from './core/errors';
 export * from './core/ports';
 export * from './core/storage/storage-manager';
 export * from './core/process/process-manager';
+export * from './core/protocol/acp-client-adapter';

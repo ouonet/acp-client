@@ -83,7 +83,7 @@ describe('T4: ProcessManager (Lifecycle Supervision & Zombie Protection)', () =>
       command: 'node',
       args: [
         '-e',
-        'process.stdout.write("ready\\n"); process.on("SIGTERM", () => {}); setInterval(() => {}, 1000);',
+        'process.on("SIGTERM", () => {}); process.stdout.write("ready\\n"); setInterval(() => {}, 1000);',
       ],
       env: {},
       transport: 'stdio',

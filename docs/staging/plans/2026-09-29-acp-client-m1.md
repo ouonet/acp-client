@@ -29,7 +29,7 @@ Milestone: M1 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/process-manager.test.ts` passes all tests verifying process spawning, status events, auto-restart, and timeout kill.
   spec: docs/staging/specs/2026-09-29-acp-client.md#2-process-manager-srccoreprocessprocess-managerts
 
-- [ ] T5: ACP SDK Client Transport Adapter
+- [x] T5: ACP SDK Client Transport Adapter
   goal: Implement AcpClientAdapter wrapping @agentclientprotocol/sdk client fluent API over child process stdio with capability negotiation (v1 and v2).
   files: src/core/protocol/acp-client-adapter.ts, test/core/acp-client-adapter.test.ts
   acceptance: `npx vitest run test/core/acp-client-adapter.test.ts` passes with mock stdio streams (PassThrough) proving initialize handshake and event parsing.
