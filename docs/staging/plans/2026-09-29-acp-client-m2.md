@@ -5,7 +5,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
 
 ## Tasks
 
-- [ ] T1: VS Code Extension Scaffolding & Shared IPC Contract
+- [x] T1: VS Code Extension Scaffolding & Shared IPC Contract
   goal: Add `@types/vscode` (v^1.90.0) and bundling tools to devDependencies, implement `VsCodeWorkspaceAdapter` implementing `IWorkspacePort`, and define strict types for Webview-Extension unidirectional IPC protocol (`Action` and `StateSnapshot`/`Event`).
   files: package.json, src/shared/ipc-protocol.ts, src/vscode/ports/vscode-workspace-adapter.ts, test/vscode/ipc-protocol.test.ts
   acceptance: `npx vitest run test/vscode/ipc-protocol.test.ts` passes; type check passes with zero errors under strict mode.
