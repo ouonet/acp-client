@@ -5,7 +5,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
 
 ## Tasks
 
-- [ ] T1: Interactive Diff Viewer & Editor Dual-Mode Integration
+- [x] T1: Interactive Diff Viewer & Editor Dual-Mode Integration
   goal: Implement `DiffViewerComponent` in Webview for visual unified diff rendering (additions, deletions, line numbers) and dual-mode actions: `[Accept All]` to write to disk via `IWorkspacePort`, and `[Open in VS Code Diff Editor]` (`vscode.diff`).
   files: src/webview/components/diff-viewer.ts, src/vscode/ports/vscode-workspace-adapter.ts, src/shared/ipc-protocol.ts, test/webview/diff-viewer.test.ts, test/vscode/diff-integration.test.ts
   acceptance: `npx vitest run test/webview/diff-viewer.test.ts` passes; diff lines parsed accurately; VS Code diff action dispatches with correct URI pair.

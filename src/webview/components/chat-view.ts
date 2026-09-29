@@ -5,6 +5,7 @@
 
 import type { MessageChunk, ContentBlock, ToolCall } from '../../core/types/session';
 import { ThinkingBlockComponent } from './thinking-block';
+import { DiffViewerComponent } from './diff-viewer';
 
 export interface ChatViewOptions {
   container: HTMLElement;
@@ -295,8 +296,33 @@ export class ChatViewComponent {
         </div>
         <span class="tool-status" style="font-size: 10px; text-transform: uppercase; color: var(--fg-muted);">${tc.status}</span>
       </div>
-      ${tc.input ? `<pre style="font-size: 11px; color: var(--fg-muted); overflow-x: auto;">${escapeHtml(JSON.stringify(tc.input, null, 2))}</pre>` : ''}
+      ${tc.input && !tc.input.diff && !tc.input.patch ? `<pre style="font-size: 11px; color: var(--fg-muted); overflow-x: auto;">${escapeHtml(JSON.stringify(tc.input, null, 2))}</pre>` : ''}
     `;
+
+    if (tc.input && (tc.input.diff || tc.input.patch)) {
+      const diffContainer = document.createElement('div');
+      new DiffViewerComponent({
+        container: diffContainer,
+        filePath: tc.input.filePath || tc.input.path || 'diff',
+        diff: tc.input.diff || tc.input.patch,
+        originalContent: tc.input.originalContent,
+        modifiedContent: tc.input.modifiedContent || tc.input.content,
+        onApply: (filePath, content) => {
+          this.onAction({
+            type: 'APPLY_FILE_DIFF',
+            payload: { filePath, content },
+          });
+        },
+        onOpenDiff: (filePath, originalContent, modifiedContent) => {
+          this.onAction({
+            type: 'OPEN_DIFF_EDITOR',
+            payload: { filePath, originalContent, modifiedContent },
+          });
+        },
+      });
+      card.appendChild(diffContainer);
+    }
+
     return card;
   }
 

@@ -3,6 +3,9 @@
  */
 
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 import type { ISessionHub } from '../core/session/session-hub';
 import type { IProcessPort, IStoragePort, IWorkspacePort, Disposable } from '../core/ports';
 import {
@@ -253,9 +256,50 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
         break;
       }
 
+      case 'APPLY_FILE_DIFF': {
+        if (this.workspaceAdapter) {
+          const { filePath, content } = action.payload;
+          await this.workspaceAdapter.writeFile(filePath, content);
+          vscode.window.showInformationMessage(`ACP: Applied changes to ${path.basename(filePath)}`);
+        }
+        break;
+      }
+
+      case 'OPEN_DIFF_EDITOR': {
+        const { filePath, originalContent, modifiedContent } = action.payload;
+        await this.openDiffEditor(filePath, originalContent, modifiedContent);
+        break;
+      }
+
       default:
         break;
     }
+  }
+
+  private async openDiffEditor(
+    filePath: string,
+    originalContent: string,
+    modifiedContent: string
+  ): Promise<void> {
+    const tmpDir = path.join(os.tmpdir(), 'acp-diff');
+    await fs.mkdir(tmpDir, { recursive: true });
+    const ext = path.extname(filePath);
+    const base = path.basename(filePath, ext);
+    const origPath = path.join(tmpDir, `${base}.original${ext}`);
+    const modPath = path.join(tmpDir, `${base}.modified${ext}`);
+
+    await fs.writeFile(origPath, originalContent, 'utf-8');
+    await fs.writeFile(modPath, modifiedContent, 'utf-8');
+
+    const origUri = vscode.Uri.file(origPath);
+    const modUri = vscode.Uri.file(modPath);
+
+    await vscode.commands.executeCommand(
+      'vscode.diff',
+      origUri,
+      modUri,
+      `${path.basename(filePath)} (ACP Diff Review)`
+    );
   }
 
   private async testAgentConnection(config: AgentConfig): Promise<void> {

@@ -107,6 +107,22 @@ export type WebviewAction =
       payload: {
         code: string;
       };
+    }
+  | {
+      type: 'APPLY_FILE_DIFF';
+      payload: {
+        filePath: string;
+        diff?: string;
+        content: string;
+      };
+    }
+  | {
+      type: 'OPEN_DIFF_EDITOR';
+      payload: {
+        filePath: string;
+        originalContent: string;
+        modifiedContent: string;
+      };
     };
 
 export const WEBVIEW_ACTION_TYPES = new Set<string>([
@@ -124,6 +140,8 @@ export const WEBVIEW_ACTION_TYPES = new Set<string>([
   'RESTART_AGENT_PROCESS',
   'STOP_AGENT_PROCESS',
   'INSERT_CODE_TO_EDITOR',
+  'APPLY_FILE_DIFF',
+  'OPEN_DIFF_EDITOR',
 ]);
 
 export function isWebviewAction(val: unknown): val is WebviewAction {

@@ -784,3 +784,140 @@ textarea.prompt-input {
   padding: 24px;
   font-size: 12px;
 }
+
+/* Diff Viewer */
+.diff-card {
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  margin: 10px 0;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.diff-file-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.diff-stats {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.diff-add-stat {
+  color: var(--status-running);
+  font-weight: 600;
+}
+
+.diff-del-stat {
+  color: var(--status-error);
+  font-weight: 600;
+}
+
+.diff-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-accept-diff {
+  background: var(--status-running);
+  color: #111;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-accept-diff:hover {
+  opacity: 0.85;
+}
+
+.btn-open-diff {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-open-diff:hover {
+  color: var(--fg-primary);
+  border-color: var(--accent-color);
+}
+
+.diff-content-wrapper {
+  overflow-x: auto;
+  max-height: 400px;
+}
+
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.diff-line.hunk {
+  background: rgba(137, 180, 250, 0.1);
+  color: var(--accent-color);
+}
+
+.diff-line.added {
+  background: rgba(166, 227, 161, 0.15);
+  color: var(--fg-primary);
+}
+
+.diff-line.deleted {
+  background: rgba(243, 139, 168, 0.15);
+  color: var(--fg-primary);
+}
+
+.line-num {
+  width: 32px;
+  min-width: 32px;
+  text-align: right;
+  padding: 1px 6px;
+  color: var(--fg-muted);
+  user-select: none;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.line-prefix {
+  width: 16px;
+  text-align: center;
+  user-select: none;
+  font-weight: bold;
+}
+
+.diff-line.added .line-prefix {
+  color: var(--status-running);
+}
+
+.diff-line.deleted .line-prefix {
+  color: var(--status-error);
+}
+
+.line-code {
+  padding: 1px 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
