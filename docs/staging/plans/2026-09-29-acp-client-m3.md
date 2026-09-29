@@ -17,7 +17,7 @@ Milestone: M3 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/core/permission-policy.test.ts` passes; auto-approve skips prompt for whitelisted tools; deny passes rejection reason to Agent.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-04-工具执行与安全权限拦截-tool-call--permission-gate
 
-- [ ] T3: Visual MCP Server & Tool Inspector Drawer
+- [x] T3: Visual MCP Server & Tool Inspector Drawer
   goal: Implement `McpInspectorComponent` drawer and top context capsule `[ 🔌 x MCP (y Tools) ▾ ]`. Displays configured MCP servers (stdio/sse/websocket), connection status, latency, and exposed tool schemas with individual enable/disable toggles.
   files: src/webview/components/mcp-inspector.ts, src/shared/ipc-protocol.ts, test/webview/mcp-inspector.test.ts
   acceptance: `npx vitest run test/webview/mcp-inspector.test.ts` passes; tool schema parameters rendered; toggle states propagated to session options.

@@ -921,3 +921,119 @@ textarea.prompt-input {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* MCP Inspector */
+.mcp-servers-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mcp-server-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.mcp-server-chip .server-transport {
+  color: var(--fg-muted);
+  font-size: 10px;
+}
+
+.mcp-tools-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+
+.mcp-tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mcp-tool-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mcp-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mcp-tool-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-test-mcp-tool {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.btn-test-mcp-tool:hover {
+  color: var(--fg-primary);
+  border-color: var(--accent-color);
+}
+
+.mcp-tool-desc {
+  font-size: 11px;
+  color: var(--fg-muted);
+  line-height: 1.4;
+}
+
+.mcp-tool-params {
+  font-size: 11px;
+  display: flex;
+  gap: 6px;
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+.params-label {
+  color: var(--fg-muted);
+}
+
+.params-val {
+  color: var(--accent-color);
+  word-break: break-all;
+}
+
+.mcp-context-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+
+.mcp-context-capsule:hover {
+  color: var(--fg-primary);
+  border-color: var(--accent-color);
+}
