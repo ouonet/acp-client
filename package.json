@@ -1,0 +1,30 @@
+{
+  "name": "acp-client",
+  "displayName": "ACP Client",
+  "description": "Production-grade, Clean Architecture Agent Client Protocol (ACP) Client for VS Code",
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src test",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "^1.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@typescript-eslint/eslint-plugin": "^8.24.0",
+    "@typescript-eslint/parser": "^8.24.0",
+    "eslint": "^9.20.0",
+    "prettier": "^3.5.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
