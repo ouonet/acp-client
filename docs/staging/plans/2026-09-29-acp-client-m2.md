@@ -35,7 +35,7 @@ Milestone: M2 (see [docs/ROADMAP.md](file:///Users/neo/workbench/test/ai/harness
   acceptance: `npx vitest run test/webview/input-box.test.ts` passes verifying Send/Stop mode toggle on streaming state, history index cycling, and image base64 conversion.
   spec: docs/staging/specs/2026-09-29-acp-client.md#uc-06-输入框历史回溯与快捷操作-input-history-ring-buffer--ergonomics
 
-- [ ] T6: Visual Agent Configuration & History Drawer with Forking
+- [x] T6: Visual Agent Configuration & History Drawer with Forking
   goal: Implement `ConfigPanel` (with command/args/env editor and real-time Ping test probe with latency) and `HistoryDrawer` (search filter, date grouping, one-click session fork and delete).
   files: src/webview/components/config-panel.ts, src/webview/components/history-drawer.ts, test/webview/config-and-history.test.ts
   acceptance: Config panel sends ping test action and displays result dot/logs; history drawer triggers fork action with message index and renders lineage tree.
