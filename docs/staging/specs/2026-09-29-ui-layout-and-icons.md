@@ -19,7 +19,8 @@ contract: InputBoxComponent DOM & UI Layout
   - Introduce `src/webview/components/icons.ts` providing themeable SVG vector icons using `currentColor`.
   - Header, input dock, thinking block, code blocks, diff viewer, and MCP inspector updated with crisp SVGs.
 - Extension Brand Identity:
-  - `media/icon.svg` vector design + `media/icon.png` 512x512 high-resolution icon.
+  - `media/icon.svg` vector design + `media/icon.png` 512x512 high-resolution icon, both with transparent backgrounds (no filled backdrop).
+  - Regenerate the marketplace PNG from the SVG with `rsvg-convert --format png --width 512 --height 512 --output media/icon.png media/icon.svg`.
   - Registered in `package.json` under `"icon": "media/icon.png"`.
 
 invariant:
