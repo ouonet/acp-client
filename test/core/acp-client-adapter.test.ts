@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { PassThrough, Readable, Writable } from 'node:stream';
-import * as acp from '@agentclientprotocol/sdk';
-import { AcpClientAdapter } from '../../src/core/protocol/acp-client-adapter';
-import type { ContentBlock } from '../../src/core/types/session';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { PassThrough, Readable, Writable } from "node:stream";
+import * as acp from "@agentclientprotocol/sdk";
+import { AcpClientAdapter } from "../../src/core/protocol/acp-client-adapter";
+import type { ContentBlock } from "../../src/core/types/session";
 
-describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () => {
+describe("T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)", () => {
   let clientToAgent: PassThrough;
   let agentToClient: PassThrough;
   let adapter: AcpClientAdapter;
@@ -33,18 +33,26 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     onNewSession?: (params: any) => any;
     onPrompt?: (params: any, client: any) => Promise<any>;
     onCancel?: (params: any) => void;
+    onListSessions?: (params: any) => any;
+    onDeleteSession?: (params: any) => any;
+    onForkSession?: (params: any) => any;
+    onLoadSession?: (params: any) => any;
   }) {
     const agentIn = Readable.toWeb(clientToAgent) as ReadableStream<Uint8Array>;
-    const agentOut = Writable.toWeb(agentToClient) as WritableStream<Uint8Array>;
+    const agentOut = Writable.toWeb(
+      agentToClient,
+    ) as WritableStream<Uint8Array>;
     const stream = acp.ndJsonStream(agentOut, agentIn);
 
-    const app = acp.agent({ name: 'mock-agent' })
+    const app = acp
+      .agent({ name: "mock-agent" })
       .onRequest(acp.methods.agent.initialize, (ctx) => {
         if (handlers?.onInitialize) return handlers.onInitialize(ctx.params);
         return {
           protocolVersion: 1,
           agentCapabilities: {
             loadSession: true,
+            sessionCapabilities: { list: {} },
             promptCapabilities: {
               image: true,
               audio: true,
@@ -54,18 +62,70 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
       })
       .onRequest(acp.methods.agent.session.new, (ctx) => {
         if (handlers?.onNewSession) return handlers.onNewSession(ctx.params);
-        return { sessionId: 'test-session-1' };
+        return { sessionId: "test-session-1" };
+      })
+      .onRequest(acp.methods.agent.session.list, (ctx) => {
+        if (handlers?.onListSessions)
+          return handlers.onListSessions(ctx.params);
+        return {
+          sessions: [
+            {
+              sessionId: "remote-sess-1",
+              title: "Remote Task 1",
+              cwd: "/test/ws",
+              updatedAt: "2026-09-30T10:00:00Z",
+            },
+            {
+              session_id: "remote-sess-2",
+              title: "Remote Task 2",
+              workspace_path: "/test/ws2",
+              updated_at: "2026-09-30T11:00:00Z",
+            },
+          ],
+        };
+      })
+      .onRequest(
+        acp.methods.agent.session.fork,
+        (ctx) =>
+          handlers?.onForkSession?.(ctx.params) ?? { sessionId: "native-fork" },
+      )
+      .onRequest(acp.methods.agent.session.delete, (ctx) => {
+        return handlers?.onDeleteSession?.(ctx.params) ?? {};
+      })
+      .onRequest(acp.methods.agent.session.load, (ctx) => {
+        if (handlers?.onLoadSession) return handlers.onLoadSession(ctx.params);
+        return {
+          sessionId: ctx.params.sessionId,
+          configOptions: [
+            {
+              id: "model",
+              category: "model",
+              currentValue: "model-b",
+              options: [
+                { value: "model-a", name: "Model A" },
+                { value: "model-b", name: "Model B" },
+              ],
+            },
+            {
+              id: "thought_level",
+              category: "thought_level",
+              currentValue: "high",
+              options: ["low", "medium", "high"],
+            },
+          ],
+        };
       })
       .onRequest(acp.methods.agent.session.prompt, async (ctx) => {
-        if (handlers?.onPrompt) return handlers.onPrompt(ctx.params, ctx.client);
+        if (handlers?.onPrompt)
+          return handlers.onPrompt(ctx.params, ctx.client);
         await ctx.client.notify(acp.methods.client.session.update, {
           sessionId: ctx.params.sessionId,
           update: {
-            sessionUpdate: 'agent_message_chunk',
-            content: { type: 'text', text: 'Hello from mock agent' },
+            sessionUpdate: "agent_message_chunk",
+            content: { type: "text", text: "Hello from mock agent" },
           },
         });
-        return { stopReason: 'end_turn' };
+        return { stopReason: "end_turn" };
       })
       .onNotification(acp.methods.agent.session.cancel, (ctx) => {
         handlers?.onCancel?.(ctx.params);
@@ -74,13 +134,26 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     agentConnection = app.connect(stream);
   }
 
-  it('should complete initialize handshake and negotiate protocol version and capabilities', async () => {
-    setupMockAgent();
+  it("should complete initialize handshake and negotiate protocol version and capabilities", async () => {
+    let capturedClientCaps: any;
+    setupMockAgent({
+      onInitialize: (params) => {
+        capturedClientCaps = params.clientCapabilities;
+        return {
+          protocolVersion: 1,
+          agentCapabilities: {
+            loadSession: true,
+            sessionCapabilities: { fork: {}, delete: {} },
+            promptCapabilities: { image: true },
+          },
+        };
+      },
+    });
 
     adapter = new AcpClientAdapter({
       input: agentToClient,
       output: clientToAgent,
-      clientInfo: { name: 'test-client', version: '0.1.0' },
+      clientInfo: { name: "test-client", version: "0.1.0" },
     });
 
     const initResult = await adapter.initialize();
@@ -89,14 +162,115 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     expect(initResult.agentCapabilities?.loadSession).toBe(true);
     expect(adapter.getProtocolVersion()).toBe(1);
     expect(adapter.isConnected()).toBe(true);
+    expect(adapter.getAgentCapabilities()).toEqual(initResult.agentCapabilities);
+    expect(capturedClientCaps?.session?.compaction).toEqual({});
   });
 
-  it('should create new session and pass cwd and mcp servers', async () => {
+  it.each([[false, false], [true, false], [false, true], [true, true]])(
+    "advertises only installed filesystem handlers (read=%s, write=%s)",
+    async (read, write) => {
+      let offered: any;
+      setupMockAgent({ onInitialize: params => {
+        offered = params.clientCapabilities;
+        return { protocolVersion: 1, agentCapabilities: {} };
+      } });
+      adapter = new AcpClientAdapter({
+        input: agentToClient, output: clientToAgent,
+        onReadTextFile: read ? async () => "text" : undefined,
+        onWriteTextFile: write ? async () => {} : undefined,
+      });
+      await adapter.initialize();
+      expect(offered.fs).toEqual({ readTextFile: read, writeTextFile: write });
+    },
+  );
+
+  it("keeps the offered capability snapshot identical to the handshake and isolated", async () => {
+    let wire = "";
+    clientToAgent.on("data", chunk => { wire += chunk.toString(); });
+    let offered: any;
+    setupMockAgent({ onInitialize: params => {
+      offered = params.clientCapabilities;
+      return { protocolVersion: 1, agentCapabilities: {} };
+    } });
+    adapter = new AcpClientAdapter({
+      input: agentToClient, output: clientToAgent,
+      onReadTextFile: async () => "text", onWriteTextFile: async () => {},
+    });
+    expect(adapter.getClientCapabilities()).toBeUndefined();
+    await adapter.initialize({ fs: { readTextFile: false }, terminal: true });
+    expect(offered.fs).toEqual({ readTextFile: false, writeTextFile: true });
+    expect(offered.terminal).toBe(false);
+    expect(offered.session).not.toHaveProperty("loadSession");
+    // The agent SDK inserts defaults when decoding; compare against the actual JSON-RPC bytes.
+    const sent = JSON.parse(wire.trim()).params.clientCapabilities;
+    const snapshot = adapter.getClientCapabilities()!;
+    expect(snapshot).toEqual(sent);
+    snapshot.fs!.writeTextFile = false;
+    expect(adapter.getClientCapabilities()).toEqual(sent);
+  });
+
+  it("deletes an agent session when the agent advertises delete support", async () => {
+    let deletedId: string | undefined;
+    setupMockAgent({
+      onInitialize: () => ({
+        protocolVersion: 1,
+        agentCapabilities: { sessionCapabilities: { delete: {} } },
+      }),
+      onDeleteSession: (params) => {
+        deletedId = params.sessionId;
+        return {};
+      },
+    });
+    adapter = new AcpClientAdapter({
+      input: agentToClient,
+      output: clientToAgent,
+    });
+
+    await adapter.initialize();
+    expect(await adapter.deleteSession("remote-session")).toBe(true);
+    expect(deletedId).toBe("remote-session");
+  });
+
+  it("forks through the ACP session/fork capability", async () => {
+    let received: any;
+    setupMockAgent({
+      onInitialize: () => ({
+        protocolVersion: 1,
+        agentCapabilities: { sessionCapabilities: { fork: {} } },
+      }),
+      onForkSession: (params) => {
+        received = params;
+        return { sessionId: "native-fork" };
+      },
+    });
+    adapter = new AcpClientAdapter({
+      input: agentToClient,
+      output: clientToAgent,
+    });
+    await adapter.initialize();
+    expect(await adapter.forkSession("parent", "/workspace")).toEqual({
+      sessionId: "native-fork",
+    });
+    expect(received).toEqual({
+      sessionId: "parent",
+      cwd: "/workspace",
+      mcpServers: [],
+    });
+    expect(await adapter.forkSession("parent", "/workspace", 1)).toMatchObject({ sessionId: "native-fork" });
+    expect(received).toEqual({
+      sessionId: "parent",
+      cwd: "/workspace",
+      mcpServers: [],
+      _meta: { upToMessageIndex: 1 },
+    });
+  });
+
+  it("should create new session and pass cwd and mcp servers", async () => {
     let receivedNewSessionParams: any = null;
     setupMockAgent({
       onNewSession: (params) => {
         receivedNewSessionParams = params;
-        return { sessionId: 'custom-session-99' };
+        return { sessionId: "custom-session-99" };
       },
     });
 
@@ -107,40 +281,40 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
 
     const mcpServers = [
       {
-        name: 'filesystem',
-        command: 'npx',
-        args: ['-y', '@modelcontextprotocol/server-filesystem'],
+        name: "filesystem",
+        command: "npx",
+        args: ["-y", "@modelcontextprotocol/server-filesystem"],
         env: [],
       },
     ];
     await adapter.initialize();
-    const result = await adapter.newSession('/path/to/project', mcpServers);
+    const result = await adapter.newSession("/path/to/project", mcpServers);
 
-    expect(result.sessionId).toBe('custom-session-99');
-    expect(receivedNewSessionParams.cwd).toBe('/path/to/project');
+    expect(result.sessionId).toBe("custom-session-99");
+    expect(receivedNewSessionParams.cwd).toBe("/path/to/project");
     expect(receivedNewSessionParams.mcpServers).toHaveLength(1);
   });
 
-  it('should send prompt, receive streamed updates, and resolve on turn completion', async () => {
+  it("should send prompt, receive streamed updates, and resolve on turn completion", async () => {
     setupMockAgent({
       onPrompt: async (params, client) => {
         // Stream thinking chunk
         await client.notify(acp.methods.client.session.update, {
           sessionId: params.sessionId,
           update: {
-            sessionUpdate: 'agent_thought_chunk',
-            content: { type: 'text', text: 'Thinking about the answer...' },
+            sessionUpdate: "agent_thought_chunk",
+            content: { type: "text", text: "Thinking about the answer..." },
           },
         });
         // Stream message chunk
         await client.notify(acp.methods.client.session.update, {
           sessionId: params.sessionId,
           update: {
-            sessionUpdate: 'agent_message_chunk',
-            content: { type: 'text', text: 'Here is your answer!' },
+            sessionUpdate: "agent_message_chunk",
+            content: { type: "text", text: "Here is your answer!" },
           },
         });
-        return { stopReason: 'end_turn' };
+        return { stopReason: "end_turn" };
       },
     });
 
@@ -150,7 +324,7 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     });
 
     await adapter.initialize();
-    const { sessionId } = await adapter.newSession('/tmp');
+    const { sessionId } = await adapter.newSession("/tmp");
 
     const updates: any[] = [];
     adapter.onSessionUpdate((e) => {
@@ -159,20 +333,20 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
       }
     });
 
-    const promptResult = await adapter.prompt(sessionId, 'What is the answer?');
+    const promptResult = await adapter.prompt(sessionId, "What is the answer?");
 
-    expect(promptResult.stopReason).toBe('end_turn');
+    expect(promptResult.stopReason).toBe("end_turn");
     expect(updates).toHaveLength(2);
-    expect(updates[0].sessionUpdate).toBe('agent_thought_chunk');
-    expect(updates[1].sessionUpdate).toBe('agent_message_chunk');
+    expect(updates[0].sessionUpdate).toBe("agent_thought_chunk");
+    expect(updates[1].sessionUpdate).toBe("agent_message_chunk");
   });
 
-  it('should support multimodal content blocks in prompt', async () => {
+  it("should support multimodal content blocks in prompt", async () => {
     let receivedPrompt: any = null;
     setupMockAgent({
       onPrompt: async (params) => {
         receivedPrompt = params.prompt;
-        return { stopReason: 'end_turn' };
+        return { stopReason: "end_turn" };
       },
     });
 
@@ -182,38 +356,47 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     });
 
     await adapter.initialize();
-    const { sessionId } = await adapter.newSession('/tmp');
+    const { sessionId } = await adapter.newSession("/tmp");
 
     const blocks: ContentBlock[] = [
-      { type: 'text', text: 'Inspect this diagram' },
-      { type: 'image', data: 'aGVsbG8=', mimeType: 'image/png' },
+      { type: "text", text: "Inspect this diagram" },
+      { type: "image", data: "aGVsbG8=", mimeType: "image/png" },
     ];
 
     await adapter.prompt(sessionId, blocks);
 
     expect(receivedPrompt).toHaveLength(2);
-    expect(receivedPrompt[0]).toEqual({ type: 'text', text: 'Inspect this diagram' });
-    expect(receivedPrompt[1].type).toBe('image');
+    expect(receivedPrompt[0]).toEqual({
+      type: "text",
+      text: "Inspect this diagram",
+    });
+    expect(receivedPrompt[1].type).toBe("image");
   });
 
-  it('should handle permission requests from agent and return client decision', async () => {
+  it("should handle permission requests from agent and return client decision", async () => {
     setupMockAgent({
       onPrompt: async (params, client) => {
-        const permRes = await client.request(acp.methods.client.session.requestPermission, {
-          sessionId: params.sessionId,
-          toolCall: {
-            toolCallId: 'call-1',
+        const permRes = await client.request(
+          acp.methods.client.session.requestPermission,
+          {
+            sessionId: params.sessionId,
+            toolCall: {
+              toolCallId: "call-1",
+            },
+            options: [
+              { optionId: "opt-allow", name: "Allow", kind: "allow_once" },
+              { optionId: "opt-deny", name: "Deny", kind: "reject_once" },
+            ],
           },
-          options: [
-            { optionId: 'opt-allow', name: 'Allow', kind: 'allow_once' },
-            { optionId: 'opt-deny', name: 'Deny', kind: 'reject_once' },
-          ],
-        });
+        );
 
-        if (permRes.outcome.outcome === 'selected' && permRes.outcome.optionId === 'opt-allow') {
-          return { stopReason: 'end_turn' };
+        if (
+          permRes.outcome.outcome === "selected" &&
+          permRes.outcome.optionId === "opt-allow"
+        ) {
+          return { stopReason: "end_turn" };
         }
-        return { stopReason: 'cancelled' };
+        return { stopReason: "cancelled" };
       },
     });
 
@@ -223,37 +406,40 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
       output: clientToAgent,
       onRequestPermission: async (req) => {
         permissionRequested = true;
-        expect(req.toolCall.toolCallId).toBe('call-1');
+        expect(req.toolCall.toolCallId).toBe("call-1");
         return {
           outcome: {
-            outcome: 'selected',
-            optionId: 'opt-allow',
+            outcome: "selected",
+            optionId: "opt-allow",
           },
         };
       },
     });
 
     await adapter.initialize();
-    const { sessionId } = await adapter.newSession('/tmp');
-    const result = await adapter.prompt(sessionId, 'Delete temporary files');
+    const { sessionId } = await adapter.newSession("/tmp");
+    const result = await adapter.prompt(sessionId, "Delete temporary files");
 
     expect(permissionRequested).toBe(true);
-    expect(result.stopReason).toBe('end_turn');
+    expect(result.stopReason).toBe("end_turn");
   });
 
-  it('should handle fs requests from agent and route to workspace handlers', async () => {
+  it("should handle fs requests from agent and route to workspace handlers", async () => {
     setupMockAgent({
       onPrompt: async (params, client) => {
-        const readRes = await client.request(acp.methods.client.fs.readTextFile, {
-          sessionId: params.sessionId,
-          path: '/src/main.ts',
-        });
+        const readRes = await client.request(
+          acp.methods.client.fs.readTextFile,
+          {
+            sessionId: params.sessionId,
+            path: "/src/main.ts",
+          },
+        );
         await client.request(acp.methods.client.fs.writeTextFile, {
           sessionId: params.sessionId,
-          path: '/src/output.txt',
+          path: "/src/output.txt",
           content: `processed: ${readRes.content}`,
         });
-        return { stopReason: 'end_turn' };
+        return { stopReason: "end_turn" };
       },
     });
 
@@ -262,8 +448,8 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
       input: agentToClient,
       output: clientToAgent,
       onReadTextFile: async (path) => {
-        if (path === '/src/main.ts') return 'export const x = 1;';
-        throw new Error('File not found');
+        if (path === "/src/main.ts") return "export const x = 1;";
+        throw new Error("File not found");
       },
       onWriteTextFile: async (path, content) => {
         writtenFiles.set(path, content);
@@ -271,17 +457,19 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     });
 
     await adapter.initialize();
-    const { sessionId } = await adapter.newSession('/tmp');
-    await adapter.prompt(sessionId, 'Process main.ts');
+    const { sessionId } = await adapter.newSession("/tmp");
+    await adapter.prompt(sessionId, "Process main.ts");
 
-    expect(writtenFiles.get('/src/output.txt')).toBe('processed: export const x = 1;');
+    expect(writtenFiles.get("/src/output.txt")).toBe(
+      "processed: export const x = 1;",
+    );
   });
 
-  it('should notify agent on prompt cancellation', async () => {
+  it("should notify agent on prompt cancellation", async () => {
     let cancelReceived = false;
     setupMockAgent({
       onCancel: (params) => {
-        if (params.sessionId === 'test-session-1') {
+        if (params.sessionId === "test-session-1") {
           cancelReceived = true;
         }
       },
@@ -293,7 +481,7 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     });
 
     await adapter.initialize();
-    const { sessionId } = await adapter.newSession('/tmp');
+    const { sessionId } = await adapter.newSession("/tmp");
 
     await adapter.cancel(sessionId);
     // Allow microtask tick for notification dispatch
@@ -302,7 +490,7 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     expect(cancelReceived).toBe(true);
   });
 
-  it('should close connection cleanly and trigger onClose', async () => {
+  it("should close connection cleanly and trigger onClose", async () => {
     setupMockAgent();
 
     adapter = new AcpClientAdapter({
@@ -323,6 +511,60 @@ describe('T5: AcpClientAdapter (ACP SDK Transport & Protocol Negotiation)', () =
     expect(closeFired).toBe(true);
 
     // Operations on closed adapter should throw
-    await expect(adapter.newSession('/tmp')).rejects.toThrow();
+    await expect(adapter.newSession("/tmp")).rejects.toThrow();
+  });
+
+  it("should request session/list and normalize camelCase and snake_case properties", async () => {
+    setupMockAgent();
+
+    adapter = new AcpClientAdapter({
+      input: agentToClient,
+      output: clientToAgent,
+    });
+
+    await adapter.initialize();
+
+    const list = await adapter.listSessions({ cwd: "/test/ws" });
+    expect(list).toHaveLength(2);
+    expect(list[0]).toEqual({
+      sessionId: "remote-sess-1",
+      title: "Remote Task 1",
+      cwd: "/test/ws",
+      updatedAt: "2026-09-30T10:00:00Z",
+    });
+    expect(list[1]).toEqual({
+      sessionId: "remote-sess-2",
+      title: "Remote Task 2",
+      cwd: "/test/ws2",
+      updatedAt: "2026-09-30T11:00:00Z",
+    });
+  });
+
+  it("should parse and normalize configOptions into models and thinkingLevels on loadSession", async () => {
+    setupMockAgent();
+
+    adapter = new AcpClientAdapter({
+      input: agentToClient,
+      output: clientToAgent,
+    });
+
+    await adapter.initialize();
+
+    const result = await adapter.loadSession("sess-existing", "/workspace");
+    expect(result.sessionId).toBe("sess-existing");
+    expect(result.models).toEqual(["model-a", "model-b"]);
+    expect(result.currentModel).toBe("model-b");
+    expect(result.thinkingLevels).toEqual(["low", "medium", "high"]);
+    expect(result.currentThinkingLevel).toBe("high");
+  });
+});
+
+describe("config option category parsing", () => {
+  it("keeps agent option IDs and opaque values", async () => {
+    const { parseConfigOptions } = await import("../../src/core/protocol/acp-client-adapter");
+    expect(parseConfigOptions([
+      { id: "engine", category: "model", currentValue: "m2", options: [{ value: "m1" }, { value: "m2" }] },
+      { id: "reason", category: "thought_level", currentValue: "ultra", options: [{ value: "ultra" }] },
+    ])).toMatchObject({ modelConfigId: "engine", thinkingConfigId: "reason", models: ["m1", "m2"], thinkingLevels: ["ultra"] });
   });
 });

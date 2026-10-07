@@ -1,0 +1,83 @@
+/* Config & History Drawers Layout */
+.drawer-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 16px;
+  overflow-x: auto;
+}
+.drawer-tab {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: var(--fg-secondary);
+}
+.drawer-tab.active {
+  color: var(--fg-primary);
+  border-bottom-color: var(--accent-color);
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+}
+
+/* History Session List */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.history-item:hover { background: rgba(127, 127, 127, 0.08); }
+.history-item.active {
+  background: rgba(14, 99, 156, 0.12);
+  border-left: 3px solid var(--accent-color);
+}
+.history-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+.history-item-title {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item-time {
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+.history-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.history-item:hover .history-item-actions { opacity: 1; }

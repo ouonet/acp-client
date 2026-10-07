@@ -1,0 +1,531 @@
+/* Message Stream & Turn Containers - Fully Restored from Tuned Design */
+.chat-scroll-area,
+.chat-view,
+.chat-viewport {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+.message-row,
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 14px;
+  box-sizing: border-box;
+}
+.message-row.user,
+.user-turn {
+  position: relative;
+  background: rgba(0, 127, 212, 0.18);
+  background: color-mix(
+    in srgb,
+    var(--vscode-editor-background, #1e1e1e) 84%,
+    var(--vscode-focusBorder, #007fd4) 16%
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 35%, transparent);
+  color: var(--vscode-editor-foreground);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+.user-message-actions {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+.message-row.user:hover .user-message-actions {
+  opacity: 1;
+}
+.user-message-actions .turn-action-btn,
+.turn-action-btn,
+.btn-msg-fork,
+.btn-msg-copy,
+.btn-turn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.12));
+  border: 1px solid var(--border-subtle);
+  color: var(--fg-muted);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.turn-action-btn:hover,
+.btn-msg-fork:hover,
+.btn-msg-copy:hover {
+  color: var(--fg-primary);
+  background: var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.22));
+}
+.message-row.assistant,
+.assistant-turn {
+  background: transparent;
+  border-radius: var(--radius-md);
+  padding: 4px 0 10px 0;
+}
+.turn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  user-select: none;
+}
+.turn-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.role-badge.user-badge {
+  color: var(--vscode-editor-foreground);
+}
+.role-badge.assistant-badge {
+  color: var(--vscode-textLink-foreground, var(--accent-color));
+}
+.agent-tag,
+.model-tag {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  background: rgba(127, 127, 127, 0.1);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.turn-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.message-bubble,
+.user-bubble {
+  line-height: 1.5;
+  word-break: break-word;
+  color: var(--fg-primary);
+}
+.message-row.user .message-bubble {
+  background: transparent;
+  color: var(--vscode-editor-foreground);
+  padding: 0;
+}
+.assistant-content {
+  min-width: 0;
+}
+.turn-timestamp {
+  display: block;
+  font-size: 10px;
+  color: var(--fg-muted);
+  margin-top: 6px;
+}
+.user-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Thinking Block */
+.thinking-block,
+.thinking-card {
+  border-radius: var(--radius-sm);
+  background: var(--thinking-bg);
+  border: 1px solid var(--thinking-border);
+  overflow: hidden;
+  margin: 6px 0;
+}
+.thinking-header {
+  width: 100%;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  color: var(--fg-secondary);
+  text-align: left;
+}
+.thinking-header:hover {
+  background: rgba(127, 127, 127, 0.08);
+  color: var(--fg-primary);
+}
+.thinking-body {
+  padding: 8px 12px;
+  border-top: 1px solid var(--thinking-border);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.thinking-pre {
+  margin: 0;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.thinking-card:not(.expanded) .thinking-body {
+  display: none;
+}
+
+/* Collapsible Execution Steps Card */
+.execution-steps-card {
+  margin: 6px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+.execution-card-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+}
+.execution-card-header:hover {
+  background: rgba(127, 127, 127, 0.08);
+  color: var(--fg-primary);
+}
+.execution-steps-body {
+  padding: 4px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid var(--border-subtle);
+}
+.execution-steps-card:not(.expanded) .execution-steps-body {
+  display: none;
+}
+
+/* Minimalist Tool Call Card */
+.tool-call-card,
+.tool-card {
+  margin: 2px 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+}
+.tool-call-header,
+.tool-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 6px;
+  border: none;
+  background: transparent;
+  color: var(--fg-muted);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+.tool-call-header:hover,
+.tool-header:hover {
+  background: rgba(127, 127, 127, 0.08);
+  color: var(--fg-primary);
+}
+.tool-header-left,
+.tool-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tool-header-left {
+  flex: 1;
+}
+.tool-name {
+  font-weight: 500;
+  color: var(--fg-primary);
+  font-size: 12px;
+}
+.tool-preview {
+  color: var(--fg-muted);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-call-body,
+.tool-body {
+  padding: 6px 8px;
+  font-size: 11px;
+  border-top: none;
+}
+.tool-call-card:not(.expanded) .tool-call-body {
+  display: none;
+}
+.tool-section-label {
+  display: block;
+  font-size: 10px;
+  color: var(--fg-muted);
+  margin-bottom: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.tool-code,
+.tool-io-pre {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  overflow-x: auto;
+  max-height: 200px;
+  margin: 2px 0 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Ordered execution timeline: independent frameless collapsible levels. */
+.execution-steps-card,
+.internal-turn-card,
+.thinking-card {
+  border: none;
+  background: var(--card-bg, rgba(127, 127, 127, 0.06));
+}
+.execution-steps-body,
+.thinking-body {
+  border: none;
+}
+.internal-turn-card {
+  margin: 2px 0;
+  min-width: 0;
+}
+.internal-turn-card:not(.expanded) .internal-turn-body {
+  display: none;
+}
+.internal-turn-header {
+  min-width: 0;
+  line-height: 1.5;
+}
+.turn-call-count,
+.elapsed-time {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--fg-muted);
+}
+.turn-thinking-preview {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+.internal-turn-card.expanded .internal-turn-header {
+  align-items: flex-start;
+}
+.internal-turn-card.expanded .turn-thinking-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: visible;
+  text-overflow: clip;
+}
+.thinking-label {
+  display: block;
+  color: var(--fg-muted);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.thinking-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.toggle-icon,
+.tool-chevron,
+.tool-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.toggle-icon svg,
+.tool-chevron svg,
+.tool-icon svg {
+  width: 12px;
+  height: 12px;
+}
+.execution-card-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-name {
+  min-width: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-preview {
+  flex: 1;
+  min-width: 0;
+}
+.tool-call-header .elapsed-time,
+.tool-badge {
+  flex-shrink: 0;
+}
+.tool-badge {
+  font-size: 10px;
+}
+.badge-failed,
+.badge-denied,
+.badge-error {
+  color: var(--vscode-errorForeground, #f48771);
+}
+.tool-code {
+  overflow-wrap: anywhere;
+}
+.tool-diff-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.turn-header {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.turn-header-left {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.turn-header .turn-timestamp {
+  margin-top: 0;
+}
+.turn-header-actions {
+  margin-left: auto;
+}
+.user-attachment-img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+/* Overlay hover actions at the right midpoint without reserving layout space. */
+.user-turn .message-toolbar {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  padding: 3px;
+  border-radius: 6px;
+  background: var(
+    --vscode-editorWidget-background,
+    var(--vscode-editor-background, #252526)
+  );
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.user-turn:hover .message-toolbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+.user-turn:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, var(--accent-color));
+  outline-offset: 2px;
+}
+.assistant-message-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.assistant-message-actions .turn-header-left {
+  overflow-wrap: anywhere;
+}
+.assistant-message-actions .turn-timestamp {
+  margin-top: 0;
+}
+.message-action-feedback {
+  color: var(--fg-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* Compact message actions share the header icon geometry. */
+.turn-action-btn.action-icon-btn {
+  justify-content: center; box-sizing: border-box;
+  width: 28px; height: 28px; flex: 0 0 28px;
+  padding: 0; gap: 0; line-height: 1;
+  border-color: transparent; background: transparent;
+}
+.turn-action-btn.action-icon-btn:hover:not(:disabled) {
+  color: var(--fg-primary);
+  background: var(--vscode-toolbar-hoverBackground, rgba(127, 127, 127, 0.12));
+}
+.turn-action-btn.action-icon-btn:disabled { opacity: 0.5; cursor: default; }
+.turn-action-btn.action-icon-btn:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, var(--accent-color)); outline-offset: 1px;
+}
+
+/* Permission Gate */
+.permission-gate,
+.permission-card {
+  border: 1px solid #d29922;
+  background: rgba(210, 153, 34, 0.08);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0;
+}
+.permission-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}

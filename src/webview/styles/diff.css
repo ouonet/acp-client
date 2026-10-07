@@ -1,0 +1,51 @@
+/* Diff Viewer Layout */
+.diff-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--card-bg);
+  overflow: hidden;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.diff-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(127, 127, 127, 0.08);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.diff-body {
+  overflow-x: auto;
+  max-height: 360px;
+}
+
+.diff-line {
+  display: flex;
+  line-height: 1.5;
+  white-space: pre;
+}
+.diff-line.addition {
+  background: rgba(46, 160, 67, 0.15);
+  color: #3fb950;
+}
+.diff-line.deletion {
+  background: rgba(207, 34, 46, 0.15);
+  color: #f85149;
+}
+.diff-line-number {
+  width: 40px;
+  text-align: right;
+  padding-right: 8px;
+  user-select: none;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+.diff-line-content {
+  flex: 1;
+  padding-left: 6px;
+}

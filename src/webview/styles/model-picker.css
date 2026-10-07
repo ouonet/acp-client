@@ -1,0 +1,58 @@
+.combined-picker {
+  position: relative;
+  min-width: 0;
+}
+.model-picker-toggle {
+  border: 1px solid var(--vscode-widget-border, transparent);
+  border-radius: 999px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-input-background);
+  padding: 4px 10px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.model-picker-toggle:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.model-picker-menu {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  min-width: 180px;
+  max-width: min(320px, 90vw);
+  max-height: 50vh;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 8px;
+  background: var(--vscode-menu-background, var(--vscode-editor-background));
+  color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  box-shadow: 0 4px 16px var(--vscode-widget-shadow, #0004);
+  z-index: 20;
+}
+.model-picker-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.model-picker-menu button:hover,
+.model-picker-menu button:focus-visible,
+.model-picker-menu button.active {
+  background: var(--vscode-list-hoverBackground);
+}
+.model-picker-levels {
+  border-top: 1px solid var(--vscode-widget-border);
+  padding-top: 4px;
+  margin-top: 4px;
+}

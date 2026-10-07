@@ -2,9 +2,9 @@
  * VS Code Native Chat Participant (@acp) Bridge
  */
 
-import * as vscode from 'vscode';
-import type { ISessionHub } from '../core/session/session-hub';
-import type { IStoragePort } from '../core/ports';
+import * as vscode from "vscode";
+import type { ISessionHub } from "../core/session/session-hub";
+import type { IStoragePort } from "../core/ports";
 
 export interface ChatParticipantOptions {
   sessionHub: ISessionHub;
@@ -12,13 +12,13 @@ export interface ChatParticipantOptions {
 }
 
 export class AcpChatParticipant implements vscode.Disposable {
-  public static readonly participantId = 'acpClient.acpParticipant';
+  public static readonly participantId = "acpClient.acpParticipant";
   private participant: vscode.ChatParticipant;
 
   constructor(private options: ChatParticipantOptions) {
     this.participant = vscode.chat.createChatParticipant(
       AcpChatParticipant.participantId,
-      this.handleRequest.bind(this)
+      this.handleRequest.bind(this),
     );
   }
 
@@ -26,28 +26,30 @@ export class AcpChatParticipant implements vscode.Disposable {
     request: vscode.ChatRequest,
     _context: vscode.ChatContext,
     stream: vscode.ChatResponseStream,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
   ): Promise<vscode.ChatResult | void> {
     const { sessionHub, storageManager } = this.options;
 
     // Handle slash sub-commands: /clear or /fork
-    if (request.command === 'clear') {
+    if (request.command === "clear") {
       const configs = (await storageManager?.getAgentConfigs()) || [];
-      const defaultAgent = configs[0]?.id || 'default-agent';
-      await sessionHub.createSession(defaultAgent, 'Chat Session');
-      stream.markdown('Cleared active session and created a new ACP session.');
+      const defaultAgent = configs[0]?.id || "default-agent";
+      await sessionHub.createSession(defaultAgent, "Chat Session");
+      stream.markdown("Cleared active session and created a new ACP session.");
       return;
     }
 
-    if (request.command === 'fork') {
+    if (request.command === "fork") {
       const active = sessionHub.getActiveSession();
       if (!active) {
-        stream.markdown('No active session to fork. Please send a message first.');
+        stream.markdown(
+          "No active session to fork. Please send a message first.",
+        );
         return;
       }
       const forked = await sessionHub.forkSession(active.id);
       stream.markdown(
-        `Forked session \`${active.id.slice(0, 8)}\` into new session \`${forked.id.slice(0, 8)}\`.`
+        `Forked session \`${active.id.slice(0, 8)}\` into new session \`${forked.id.slice(0, 8)}\`.`,
       );
       return;
     }
@@ -56,19 +58,19 @@ export class AcpChatParticipant implements vscode.Disposable {
     let session = sessionHub.getActiveSession();
     if (!session) {
       const configs = (await storageManager?.getAgentConfigs()) || [];
-      const defaultAgent = configs[0]?.id || 'default-agent';
-      session = await sessionHub.createSession(defaultAgent, 'Chat Session');
+      const defaultAgent = configs[0]?.id || "default-agent";
+      session = await sessionHub.createSession(defaultAgent, "Chat Session");
     }
 
     // Subscribe to session streaming updates
     const subscription = session.onEvent((event) => {
-      if (event.type === 'chunk') {
-        const text = event.payload?.content?.text || '';
+      if (event.type === "chunk") {
+        const text = event.payload?.content?.text || "";
         if (text) {
           stream.markdown(text);
         }
-      } else if (event.type === 'tool_call') {
-        stream.progress(`Executing tool: ${event.payload?.title || 'tool'}...`);
+      } else if (event.type === "tool_call") {
+        stream.progress(`Executing tool: ${event.payload?.title || "tool"}...`);
       }
     });
 

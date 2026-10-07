@@ -3,7 +3,7 @@
  * Discovers skills from workspace .agents/skills/ and .skills/ directories.
  */
 
-import type { IWorkspacePort } from '../ports';
+import type { IWorkspacePort } from "../ports";
 
 export interface SkillDefinition {
   id: string;
@@ -14,40 +14,16 @@ export interface SkillDefinition {
   systemPrompt?: string;
 }
 
-export const BUILTIN_SKILLS: SkillDefinition[] = [
-  {
-    id: 'clear',
-    name: 'clear',
-    description: 'Clear current chat display and reset active view',
-    filePath: 'builtin:clear',
-  },
-  {
-    id: 'tdd',
-    name: 'tdd',
-    description: 'Test-Driven Development workflow (RED -> GREEN -> REFACTOR)',
-    filePath: 'builtin:tdd',
-    systemPrompt: 'Follow TDD strictly. Write minimal failing tests before writing implementation code.',
-  },
-  {
-    id: 'review',
-    name: 'review',
-    description: 'Perform rigorous architectural and code quality review',
-    filePath: 'builtin:review',
-    systemPrompt: 'Review the codebase focusing on Clean Architecture, ports & adapters, and invariants.',
-  },
-  {
-    id: 'design',
-    name: 'design',
-    description: 'Technical design & trade-offs analysis before implementation',
-    filePath: 'builtin:design',
-    systemPrompt: 'Produce technical specifications with clear failure modes and executable acceptance criteria.',
-  },
-];
+export const BUILTIN_SKILLS: SkillDefinition[] = [];
 
-export function parseSkillFrontmatter(content: string, filePath: string): SkillDefinition | null {
-  const normalized = content.replace(/\r\n/g, '\n');
-  const pathParts = filePath.replace(/\\/g, '/').split('/');
-  const dirName = pathParts.length >= 2 ? pathParts[pathParts.length - 2] : 'skill';
+export function parseSkillFrontmatter(
+  content: string,
+  filePath: string,
+): SkillDefinition | null {
+  const normalized = content.replace(/\r\n/g, "\n");
+  const pathParts = filePath.replace(/\\/g, "/").split("/");
+  const dirName =
+    pathParts.length >= 2 ? pathParts[pathParts.length - 2] : "skill";
 
   const fmMatch = normalized.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
   if (!fmMatch) {
@@ -67,23 +43,32 @@ export function parseSkillFrontmatter(content: string, filePath: string): SkillD
   let description = `${dirName} skill`;
   const triggers: string[] = [];
 
-  const lines = yamlBlock.split('\n');
+  const lines = yamlBlock.split("\n");
   let inTriggers = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
+    if (!trimmed || trimmed.startsWith("#")) continue;
 
-    if (trimmed.startsWith('name:')) {
-      name = trimmed.slice(5).trim().replace(/^['"]|['"]$/g, '');
+    if (trimmed.startsWith("name:")) {
+      name = trimmed
+        .slice(5)
+        .trim()
+        .replace(/^['"]|['"]$/g, "");
       inTriggers = false;
-    } else if (trimmed.startsWith('description:')) {
-      description = trimmed.slice(12).trim().replace(/^['"]|['"]$/g, '');
+    } else if (trimmed.startsWith("description:")) {
+      description = trimmed
+        .slice(12)
+        .trim()
+        .replace(/^['"]|['"]$/g, "");
       inTriggers = false;
-    } else if (trimmed.startsWith('triggers:')) {
+    } else if (trimmed.startsWith("triggers:")) {
       inTriggers = true;
-    } else if (inTriggers && trimmed.startsWith('-')) {
-      const trigger = trimmed.slice(1).trim().replace(/^['"]|['"]$/g, '');
+    } else if (inTriggers && trimmed.startsWith("-")) {
+      const trigger = trimmed
+        .slice(1)
+        .trim()
+        .replace(/^['"]|['"]$/g, "");
       if (trigger) triggers.push(trigger);
     } else {
       inTriggers = false;
@@ -102,7 +87,7 @@ export function parseSkillFrontmatter(content: string, filePath: string): SkillD
 export class SkillDiscovery {
   public async findSkills(
     workspaceRoot: string,
-    workspace: IWorkspacePort
+    workspace: IWorkspacePort,
   ): Promise<SkillDefinition[]> {
     const discovered: SkillDefinition[] = [];
     const searchDirs = [

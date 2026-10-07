@@ -34,13 +34,20 @@ async function build() {
 
   // 2. Build Webview SPA Client Bundle
   console.log('[build] Bundling Webview Cockpit SPA (dist/webview.js)...');
+  const webviewEntry = (await fs.stat('src/webview/main.tsx').catch(() => null))
+    ? 'src/webview/main.tsx'
+    : 'src/webview/main.ts';
+
   const webviewCtx = await esbuild.context({
-    entryPoints: ['src/webview/main.ts'],
+    entryPoints: [webviewEntry],
     bundle: true,
     platform: 'browser',
     target: 'es2022',
-    format: 'esm',
+    format: 'iife',
+    globalName: 'AcpWebview',
     outfile: 'dist/webview.js',
+    jsx: 'automatic',
+    jsxImportSource: 'preact',
     sourcemap: !isProduction,
     minify: isProduction,
     logLevel: 'info',
@@ -49,17 +56,46 @@ async function build() {
   // Execute builds
   await Promise.all([extensionCtx.rebuild(), webviewCtx.rebuild()]);
 
-  // 3. Copy CSS and HTML assets
-  console.log('[build] Copying static webview assets to dist/...');
-  await fs.copyFile('src/webview/style.css', 'dist/webview.css');
-  try {
-    await fs.copyFile('src/webview/index.html', 'dist/index.html');
-  } catch {
-    // optional
-  }
+  // 3. Copy/Bundle CSS and HTML assets
+  const copyAssets = async () => {
+    try {
+      const hasModularCss = await fs.stat('src/webview/styles/index.css').catch(() => null);
+      if (hasModularCss) {
+        await esbuild.build({
+          entryPoints: ['src/webview/styles/index.css'],
+          bundle: true,
+          outfile: 'dist/webview.css',
+          loader: { '.woff2': 'file', '.woff': 'file', '.ttf': 'file' },
+          assetNames: 'fonts/[name]-[hash]',
+          minify: isProduction,
+        });
+      } else {
+        await fs.copyFile('src/webview/style.css', 'dist/webview.css');
+      }
+      try {
+        await fs.copyFile('src/webview/index.html', 'dist/index.html');
+      } catch {
+        // optional
+      }
+      console.log('[build] Updated static webview assets in dist/');
+    } catch (err) {
+      console.error('[build] Error copying/bundling static assets:', err);
+      throw err;
+    }
+  };
+  await copyAssets();
 
   if (isWatch) {
     console.log('[build] Watching for file changes...');
+    try {
+      const { watch } = await import('fs');
+      watch('src/webview/style.css', () => { copyAssets(); });
+      try {
+        watch('src/webview/styles', { recursive: true }, () => { copyAssets(); });
+      } catch {}
+    } catch {
+      // ignore
+    }
     await Promise.all([extensionCtx.watch(), webviewCtx.watch()]);
   } else {
     await Promise.all([extensionCtx.dispose(), webviewCtx.dispose()]);

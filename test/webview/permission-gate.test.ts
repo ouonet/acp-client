@@ -1,15 +1,15 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ChatViewComponent } from '../../src/webview/components/chat-view';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { ChatViewComponent } from "../../src/webview/components/chat-view";
 
-describe('T2: Webview Permission Gate Card', () => {
+describe("T2: Webview Permission Gate Card", () => {
   let container: HTMLElement;
   let onAction: ReturnType<typeof vi.fn>;
   let chatView: ChatViewComponent;
 
   beforeEach(() => {
-    container = document.createElement('div');
-    document.body.innerHTML = '';
+    container = document.createElement("div");
+    document.body.innerHTML = "";
     document.body.appendChild(container);
     onAction = vi.fn();
 
@@ -19,88 +19,92 @@ describe('T2: Webview Permission Gate Card', () => {
     });
   });
 
-  it('should render permission request options and dispatch three-tier decisions', () => {
+  it("should render permission request options and dispatch three-tier decisions", () => {
     chatView.renderPermissionPrompt({
-      sessionId: 'sess-123',
-      requestId: 'req-456',
-      toolTitle: 'fs/writeFile',
+      sessionId: "sess-123",
+      requestId: "req-456",
+      toolTitle: "fs/writeFile",
       options: [
-        { optionId: 'opt-1', name: 'Allow Once', kind: 'allow_once' },
-        { optionId: 'opt-2', name: 'Always Allow in Session', kind: 'allow_always' },
-        { optionId: 'opt-3', name: 'Deny', kind: 'deny' },
+        { optionId: "opt-1", name: "Allow Once", kind: "allow_once" },
+        {
+          optionId: "opt-2",
+          name: "Always Allow in Session",
+          kind: "allow_always",
+        },
+        { optionId: "opt-3", name: "Deny", kind: "deny" },
       ],
     });
 
-    const card = container.querySelector('.tool-approval-card') as HTMLElement;
+    const card = container.querySelector(".tool-approval-card") as HTMLElement;
     expect(card).not.toBeNull();
-    expect(card.textContent).toContain('fs/writeFile');
+    expect(card.textContent).toContain("fs/writeFile");
 
-    const buttons = card.querySelectorAll('.btn-perm-action');
+    const buttons = card.querySelectorAll(".btn-perm-action");
     expect(buttons.length).toBe(3);
 
     // Click "Always Allow in Session"
     (buttons[1] as HTMLElement).click();
 
     expect(onAction).toHaveBeenCalledWith({
-      type: 'RESPOND_PERMISSION',
+      type: "RESPOND_PERMISSION",
       payload: {
-        sessionId: 'sess-123',
-        requestId: 'req-456',
-        decision: 'always_allow_session',
-        options: { optionId: 'opt-2' },
+        sessionId: "sess-123",
+        requestId: "req-456",
+        decision: "always_allow_session",
+        optionId: "opt-2",
       },
     });
 
     // Card should be removed after decision
-    expect(container.querySelector('.tool-approval-card')).toBeNull();
+    expect(container.querySelector(".tool-approval-card")).toBeNull();
   });
 
-  it('should dispatch allow for Allow Once and deny for Deny button', () => {
+  it("should dispatch allow for Allow Once and deny for Deny button", () => {
     // 1. Allow Once
     chatView.renderPermissionPrompt({
-      sessionId: 'sess-123',
-      requestId: 'req-1',
-      toolTitle: 'terminal/run',
+      sessionId: "sess-123",
+      requestId: "req-1",
+      toolTitle: "terminal/run",
       options: [
-        { optionId: 'opt-1', name: 'Allow Once', kind: 'allow_once' },
-        { optionId: 'opt-3', name: 'Deny', kind: 'deny' },
+        { optionId: "opt-1", name: "Allow Once", kind: "allow_once" },
+        { optionId: "opt-3", name: "Deny", kind: "deny" },
       ],
     });
 
-    let card = container.querySelector('.tool-approval-card') as HTMLElement;
-    (card.querySelectorAll('.btn-perm-action')[0] as HTMLElement).click();
+    let card = container.querySelector(".tool-approval-card") as HTMLElement;
+    (card.querySelectorAll(".btn-perm-action")[0] as HTMLElement).click();
 
     expect(onAction).toHaveBeenLastCalledWith({
-      type: 'RESPOND_PERMISSION',
+      type: "RESPOND_PERMISSION",
       payload: {
-        sessionId: 'sess-123',
-        requestId: 'req-1',
-        decision: 'allow',
-        options: { optionId: 'opt-1' },
+        sessionId: "sess-123",
+        requestId: "req-1",
+        decision: "allow",
+        optionId: "opt-1",
       },
     });
 
     // 2. Deny
     chatView.renderPermissionPrompt({
-      sessionId: 'sess-123',
-      requestId: 'req-2',
-      toolTitle: 'terminal/run',
+      sessionId: "sess-123",
+      requestId: "req-2",
+      toolTitle: "terminal/run",
       options: [
-        { optionId: 'opt-1', name: 'Allow Once', kind: 'allow_once' },
-        { optionId: 'opt-3', name: 'Deny', kind: 'deny' },
+        { optionId: "opt-1", name: "Allow Once", kind: "allow_once" },
+        { optionId: "opt-3", name: "Deny", kind: "deny" },
       ],
     });
 
-    card = container.querySelector('.tool-approval-card') as HTMLElement;
-    (card.querySelectorAll('.btn-perm-action')[1] as HTMLElement).click();
+    card = container.querySelector(".tool-approval-card") as HTMLElement;
+    (card.querySelectorAll(".btn-perm-action")[1] as HTMLElement).click();
 
     expect(onAction).toHaveBeenLastCalledWith({
-      type: 'RESPOND_PERMISSION',
+      type: "RESPOND_PERMISSION",
       payload: {
-        sessionId: 'sess-123',
-        requestId: 'req-2',
-        decision: 'deny',
-        options: { optionId: 'opt-3' },
+        sessionId: "sess-123",
+        requestId: "req-2",
+        decision: "deny",
+        optionId: "opt-3",
       },
     });
   });

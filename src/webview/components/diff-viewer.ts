@@ -3,10 +3,10 @@
  * syntax lines, Accept All and VS Code Diff Editor integration.
  */
 
-import { ICONS } from './icons';
+import { ICONS } from "./icons";
 
 export interface DiffLine {
-  type: 'add' | 'delete' | 'context' | 'hunk';
+  type: "add" | "delete" | "context" | "hunk";
   oldLine?: number;
   newLine?: number;
   content: string;
@@ -35,20 +35,24 @@ export interface DiffViewerOptions {
   diff: string;
   originalContent?: string;
   modifiedContent?: string;
-  onApply?: (filePath: string, content: string) => void;
+  onApply?: (
+    filePath: string,
+    content: string,
+    originalContent: string,
+  ) => void;
   onOpenDiff?: (filePath: string, original: string, modified: string) => void;
 }
 
 function escapeHtml(str: string): string {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
-  const lines = rawDiff.split('\n');
+  const lines = rawDiff.split("\n");
   let oldFileName: string | undefined;
   let newFileName: string | undefined;
   let additions = 0;
@@ -60,12 +64,18 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
   let currentNewLine = 0;
 
   for (const line of lines) {
-    if (line.startsWith('--- ')) {
-      oldFileName = line.slice(4).trim().replace(/^[ab]\//, '');
+    if (line.startsWith("--- ")) {
+      oldFileName = line
+        .slice(4)
+        .trim()
+        .replace(/^[ab]\//, "");
       continue;
     }
-    if (line.startsWith('+++ ')) {
-      newFileName = line.slice(4).trim().replace(/^[ab]\//, '');
+    if (line.startsWith("+++ ")) {
+      newFileName = line
+        .slice(4)
+        .trim()
+        .replace(/^[ab]\//, "");
       continue;
     }
 
@@ -93,26 +103,26 @@ export function parseUnifiedDiff(rawDiff: string): ParsedDiff {
 
     if (!currentHunk) continue;
 
-    if (line.startsWith('+')) {
+    if (line.startsWith("+")) {
       additions++;
       currentHunk.lines.push({
-        type: 'add',
+        type: "add",
         newLine: currentNewLine++,
         content: line.slice(1),
       });
-    } else if (line.startsWith('-')) {
+    } else if (line.startsWith("-")) {
       deletions++;
       currentHunk.lines.push({
-        type: 'delete',
+        type: "delete",
         oldLine: currentOldLine++,
         content: line.slice(1),
       });
-    } else if (line.startsWith(' ') || line === '') {
+    } else if (line.startsWith(" ") || line === "") {
       currentHunk.lines.push({
-        type: 'context',
+        type: "context",
         oldLine: currentOldLine++,
         newLine: currentNewLine++,
-        content: line.startsWith(' ') ? line.slice(1) : line,
+        content: line.startsWith(" ") ? line.slice(1) : line,
       });
     }
   }
@@ -140,8 +150,8 @@ export class DiffViewerComponent {
   }
 
   private render(): void {
-    const card = document.createElement('div');
-    card.className = 'diff-card';
+    const card = document.createElement("div");
+    card.className = "diff-card";
 
     card.innerHTML = `
       <div class="diff-header">
@@ -154,7 +164,7 @@ export class DiffViewerComponent {
           </span>
         </div>
         <div class="diff-actions">
-          <button class="btn-accept-diff" type="button" title="Accept and apply diff to file">${ICONS.check} <span>Accept All</span></button>
+          <button class="btn-accept-diff" type="button" ${typeof this.options.originalContent === "string" && typeof this.options.modifiedContent === "string" ? "" : "disabled"} title="Accept and apply diff to file">${ICONS.check} <span>Accept All</span></button>
           <button class="btn-open-diff" type="button" title="Open VS Code native Diff Editor">${ICONS.diff} <span>Open in Diff Editor</span></button>
         </div>
       </div>
@@ -168,17 +178,25 @@ export class DiffViewerComponent {
     `;
 
     // Bind Accept button
-    card.querySelector('.btn-accept-diff')?.addEventListener('click', () => {
-      const contentToWrite = this.options.modifiedContent || this.reconstructModifiedContent();
-      this.options.onApply?.(this.options.filePath, contentToWrite);
+    card.querySelector(".btn-accept-diff")?.addEventListener("click", () => {
+      if (
+        typeof this.options.originalContent !== "string" ||
+        typeof this.options.modifiedContent !== "string"
+      )
+        return;
+      this.options.onApply?.(
+        this.options.filePath,
+        this.options.modifiedContent,
+        this.options.originalContent,
+      );
     });
 
     // Bind Open in Diff Editor button
-    card.querySelector('.btn-open-diff')?.addEventListener('click', () => {
+    card.querySelector(".btn-open-diff")?.addEventListener("click", () => {
       this.options.onOpenDiff?.(
         this.options.filePath,
-        this.options.originalContent || '',
-        this.options.modifiedContent || this.reconstructModifiedContent()
+        this.options.originalContent || "",
+        this.options.modifiedContent ?? this.reconstructModifiedContent(),
       );
     });
 
@@ -186,7 +204,7 @@ export class DiffViewerComponent {
   }
 
   private renderHunksHtml(): string {
-    let html = '';
+    let html = "";
     for (const hunk of this.parsedDiff.hunks) {
       html += `
         <tr class="diff-line hunk">
@@ -197,10 +215,16 @@ export class DiffViewerComponent {
       `;
 
       for (const line of hunk.lines) {
-        const lineClass = line.type === 'add' ? 'added' : line.type === 'delete' ? 'deleted' : 'context';
-        const prefix = line.type === 'add' ? '+' : line.type === 'delete' ? '-' : ' ';
-        const oldNum = line.oldLine !== undefined ? line.oldLine : '';
-        const newNum = line.newLine !== undefined ? line.newLine : '';
+        const lineClass =
+          line.type === "add"
+            ? "added"
+            : line.type === "delete"
+              ? "deleted"
+              : "context";
+        const prefix =
+          line.type === "add" ? "+" : line.type === "delete" ? "-" : " ";
+        const oldNum = line.oldLine !== undefined ? line.oldLine : "";
+        const newNum = line.newLine !== undefined ? line.newLine : "";
 
         html += `
           <tr class="diff-line ${lineClass}">
@@ -219,11 +243,11 @@ export class DiffViewerComponent {
     const lines: string[] = [];
     for (const hunk of this.parsedDiff.hunks) {
       for (const line of hunk.lines) {
-        if (line.type === 'add' || line.type === 'context') {
+        if (line.type === "add" || line.type === "context") {
           lines.push(line.content);
         }
       }
     }
-    return lines.join('\n');
+    return lines.join("\n");
   }
 }

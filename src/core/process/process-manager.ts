@@ -2,10 +2,17 @@
  * ProcessManager: Supervision & Zombie-Free Lifecycle Manager for ACP Agents
  */
 
-import { spawn, type ChildProcess } from 'node:child_process';
-import type { IProcessPort, ProcessStatus, ProcessStatusEvent, ProcessLogCallback, Disposable } from '../ports';
-import type { AgentConfig } from '../types/config';
-import { ProcessError } from '../errors';
+import { spawn, type ChildProcess } from "node:child_process";
+import * as fs from "node:fs";
+import type {
+  IProcessPort,
+  ProcessStatus,
+  ProcessStatusEvent,
+  ProcessLogCallback,
+  Disposable,
+} from "../ports";
+import type { AgentConfig } from "../types/config";
+import { ProcessError } from "../errors";
 
 interface ManagedProcess {
   config: AgentConfig;
@@ -13,7 +20,10 @@ interface ManagedProcess {
   status: ProcessStatus;
   intentionalStop: boolean;
   exitPromise: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
-  resolveExit: (val: { code: number | null; signal: NodeJS.Signals | null }) => void;
+  resolveExit: (val: {
+    code: number | null;
+    signal: NodeJS.Signals | null;
+  }) => void;
   killTimeout?: NodeJS.Timeout;
 }
 
@@ -37,7 +47,11 @@ export class ProcessManager implements IProcessPort {
     };
   }
 
-  private log(agentId: string, text: string, stream: 'stdout' | 'stderr' | 'system'): void {
+  private log(
+    agentId: string,
+    text: string,
+    stream: "stdout" | "stderr" | "system",
+  ): void {
     for (const listener of this.logListeners) {
       try {
         listener(agentId, text, stream);
@@ -47,7 +61,12 @@ export class ProcessManager implements IProcessPort {
     }
   }
 
-  private setStatus(agentId: string, status: ProcessStatus, pid?: number, error?: string): void {
+  private setStatus(
+    agentId: string,
+    status: ProcessStatus,
+    pid?: number,
+    error?: string,
+  ): void {
     const entry = this.managed.get(agentId);
     if (entry) {
       entry.status = status;
@@ -68,7 +87,7 @@ export class ProcessManager implements IProcessPort {
   }
 
   getStatus(agentId: string): ProcessStatus {
-    return this.managed.get(agentId)?.status ?? 'stopped';
+    return this.managed.get(agentId)?.status ?? "stopped";
   }
 
   onStatusChange(listener: (event: ProcessStatusEvent) => void): Disposable {
@@ -80,16 +99,14 @@ export class ProcessManager implements IProcessPort {
     };
   }
 
-  async start(
-    config: AgentConfig
-  ): Promise<{
+  async start(config: AgentConfig): Promise<{
     pid: number;
     stdin: NodeJS.WritableStream;
     stdout: NodeJS.ReadableStream;
     stderr: NodeJS.ReadableStream;
   }> {
     if (this.isDisposed) {
-      throw new ProcessError(config.id, 'ProcessManager has been disposed');
+      throw new ProcessError(config.id, "ProcessManager has been disposed");
     }
 
     // Stop existing process for this agent if running
@@ -97,37 +114,56 @@ export class ProcessManager implements IProcessPort {
       await this.stop(config.id, true);
     }
 
-    this.setStatus(config.id, 'starting');
+    this.setStatus(config.id, "starting");
 
-    const isWindows = process.platform === 'win32';
+    const isWindows = process.platform === "win32";
     const env = { ...process.env, ...config.env };
 
-    if (process.platform === 'darwin' || process.platform === 'linux') {
+    if (process.platform === "darwin" || process.platform === "linux") {
       const extraPaths = [
-        '/opt/homebrew/bin',
-        '/opt/homebrew/sbin',
-        '/usr/local/bin',
-        '/usr/bin',
-        '/bin',
-        '/usr/sbin',
-        '/sbin',
-        process.env.HOME ? `${process.env.HOME}/.nvm/current/bin` : '',
-        process.env.HOME ? `${process.env.HOME}/.cargo/bin` : '',
-        process.env.HOME ? `${process.env.HOME}/.local/bin` : '',
+        "/opt/homebrew/bin",
+        "/opt/homebrew/sbin",
+        "/usr/local/bin",
+        "/usr/bin",
+        "/bin",
+        "/usr/sbin",
+        "/sbin",
+        process.env.HOME ? `${process.env.HOME}/.nvm/current/bin` : "",
+        process.env.HOME ? `${process.env.HOME}/.cargo/bin` : "",
+        process.env.HOME ? `${process.env.HOME}/.local/bin` : "",
       ].filter(Boolean);
-      const currentPaths = (env.PATH || '').split(':');
+      const currentPaths = (env.PATH || "").split(":");
       for (const p of extraPaths) {
         if (!currentPaths.includes(p)) {
           currentPaths.unshift(p);
         }
       }
-      env.PATH = currentPaths.join(':');
+      env.PATH = currentPaths.join(":");
+    }
+
+    let effectiveCwd = config.cwd || process.cwd();
+    if (
+      effectiveCwd.includes("${workspaceFolder}") ||
+      effectiveCwd.includes("${workspaceRoot}")
+    ) {
+      effectiveCwd = effectiveCwd.replace(
+        /\$\{(?:workspaceFolder|workspaceRoot)\}/g,
+        process.cwd(),
+      );
+    }
+    if (!fs.existsSync(effectiveCwd)) {
+      this.log(
+        config.id,
+        `CWD "${effectiveCwd}" does not exist, falling back to ${process.cwd()}`,
+        "system",
+      );
+      effectiveCwd = process.cwd();
     }
 
     this.log(
       config.id,
-      `Spawning process: ${config.command} ${(config.args || []).join(' ')} (cwd: ${config.cwd || process.cwd()})`,
-      'system'
+      `Spawning process: ${config.command} ${(config.args || []).join(" ")} (cwd: ${effectiveCwd})`,
+      "system",
     );
 
     return new Promise((resolve, reject) => {
@@ -135,27 +171,36 @@ export class ProcessManager implements IProcessPort {
       try {
         child = spawn(config.command, config.args, {
           env,
-          cwd: config.cwd || process.cwd(),
-          stdio: ['pipe', 'pipe', 'pipe'],
+          cwd: effectiveCwd,
+          stdio: ["pipe", "pipe", "pipe"],
           shell: isWindows,
         });
       } catch (err: any) {
-        this.log(config.id, `Failed to spawn: ${err?.message}`, 'system');
-        this.setStatus(config.id, 'error', undefined, err?.message);
-        return reject(new ProcessError(config.id, err?.message || 'Failed to spawn process'));
+        this.log(config.id, `Failed to spawn: ${err?.message}`, "system");
+        this.setStatus(config.id, "error", undefined, err?.message);
+        return reject(
+          new ProcessError(
+            config.id,
+            err?.message || "Failed to spawn process",
+          ),
+        );
       }
 
-      let resolveExit!: (val: { code: number | null; signal: NodeJS.Signals | null }) => void;
-      const exitPromise = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
-        (res) => {
-          resolveExit = res;
-        }
-      );
+      let resolveExit!: (val: {
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }) => void;
+      const exitPromise = new Promise<{
+        code: number | null;
+        signal: NodeJS.Signals | null;
+      }>((res) => {
+        resolveExit = res;
+      });
 
       const managedEntry: ManagedProcess = {
         config,
         child,
-        status: 'starting',
+        status: "starting",
         intentionalStop: false,
         exitPromise,
         resolveExit,
@@ -164,26 +209,30 @@ export class ProcessManager implements IProcessPort {
       this.managed.set(config.id, managedEntry);
 
       let hasSpawned = false;
-      let stderrLog = '';
+      let stderrLog = "";
 
-      child.stderr?.on('data', (chunk) => {
+      child.stderr?.on("data", (chunk) => {
         const text = chunk.toString();
         stderrLog += text;
         if (stderrLog.length > 8000) {
           stderrLog = stderrLog.slice(-4000);
         }
-        this.log(config.id, text, 'stderr');
+        this.log(config.id, text, "stderr");
       });
 
-      child.stdout?.on('data', (chunk) => {
-        this.log(config.id, chunk.toString(), 'stdout');
+      child.stdout?.on("data", (chunk) => {
+        this.log(config.id, chunk.toString(), "stdout");
       });
 
-      child.once('spawn', () => {
+      child.once("spawn", () => {
         hasSpawned = true;
-        managedEntry.status = 'running';
-        this.log(config.id, `Process spawned successfully (PID: ${child.pid})`, 'system');
-        this.setStatus(config.id, 'running', child.pid);
+        managedEntry.status = "running";
+        this.log(
+          config.id,
+          `Process spawned successfully (PID: ${child.pid})`,
+          "system",
+        );
+        this.setStatus(config.id, "running", child.pid);
         resolve({
           pid: child.pid!,
           stdin: child.stdin!,
@@ -192,17 +241,19 @@ export class ProcessManager implements IProcessPort {
         });
       });
 
-      child.once('error', (err: any) => {
-        managedEntry.status = 'error';
-        this.log(config.id, `Process error: ${err.message}`, 'system');
-        this.setStatus(config.id, 'error', undefined, err.message);
+      child.once("error", (err: any) => {
+        managedEntry.status = "error";
+        this.log(config.id, `Process error: ${err.message}`, "system");
+        this.setStatus(config.id, "error", undefined, err.message);
         if (!hasSpawned) {
           resolveExit({ code: null, signal: null });
-          reject(new ProcessError(config.id, `Failed to spawn: ${err.message}`));
+          reject(
+            new ProcessError(config.id, `Failed to spawn: ${err.message}`),
+          );
         }
       });
 
-      child.once('exit', (code, signal) => {
+      child.once("exit", (code, signal) => {
         if (managedEntry.killTimeout) {
           clearTimeout(managedEntry.killTimeout);
           managedEntry.killTimeout = undefined;
@@ -211,16 +262,20 @@ export class ProcessManager implements IProcessPort {
         resolveExit({ code, signal });
 
         if (!managedEntry.intentionalStop) {
-          managedEntry.status = 'error';
+          managedEntry.status = "error";
           const trimmedErr = stderrLog.trim();
-          const detail = trimmedErr ? `\nStderr output: ${trimmedErr}` : '';
-          const errMsg = `Process exited unexpectedly with code ${code ?? 'null'}, signal ${signal ?? 'none'}${detail}`;
-          this.log(config.id, errMsg, 'system');
-          this.setStatus(config.id, 'error', child.pid, errMsg);
+          const detail = trimmedErr ? `\nStderr output: ${trimmedErr}` : "";
+          const errMsg = `Process exited unexpectedly with code ${code ?? "null"}, signal ${signal ?? "none"}${detail}`;
+          this.log(config.id, errMsg, "system");
+          this.setStatus(config.id, "error", child.pid, errMsg);
         } else {
-          managedEntry.status = 'stopped';
-          this.log(config.id, `Process stopped cleanly (code ${code ?? 'null'}, signal ${signal ?? 'none'})`, 'system');
-          this.setStatus(config.id, 'stopped', child.pid);
+          managedEntry.status = "stopped";
+          this.log(
+            config.id,
+            `Process stopped cleanly (code ${code ?? "null"}, signal ${signal ?? "none"})`,
+            "system",
+          );
+          this.setStatus(config.id, "stopped", child.pid);
         }
       });
     });
@@ -228,7 +283,7 @@ export class ProcessManager implements IProcessPort {
 
   async stop(agentId: string, force = false): Promise<void> {
     const entry = this.managed.get(agentId);
-    if (!entry || entry.status === 'stopped') {
+    if (!entry || entry.status === "stopped") {
       return;
     }
 
@@ -237,14 +292,14 @@ export class ProcessManager implements IProcessPort {
 
     // If the process never spawned (e.g. invalid command), clean up immediately
     if (!child.pid) {
-      entry.status = 'stopped';
+      entry.status = "stopped";
       this.managed.delete(agentId);
       return;
     }
 
     if (force) {
       try {
-        child.kill('SIGKILL');
+        child.kill("SIGKILL");
       } catch {
         // Ignore if already dead
       }
@@ -255,12 +310,12 @@ export class ProcessManager implements IProcessPort {
 
     try {
       // 1. Try graceful SIGTERM
-      child.kill('SIGTERM');
+      child.kill("SIGTERM");
 
       // 2. Schedule SIGKILL timeout
       entry.killTimeout = setTimeout(() => {
         try {
-          child.kill('SIGKILL');
+          child.kill("SIGKILL");
         } catch {
           // Ignore
         }
@@ -282,11 +337,11 @@ export class ProcessManager implements IProcessPort {
   async restart(agentId: string): Promise<{ pid: number }> {
     const entry = this.managed.get(agentId);
     if (!entry) {
-      throw new ProcessError(agentId, 'Cannot restart unknown agent');
+      throw new ProcessError(agentId, "Cannot restart unknown agent");
     }
 
     const { config } = entry;
-    this.setStatus(agentId, 'restarting');
+    this.setStatus(agentId, "restarting");
     await this.stop(agentId, true);
     const proc = await this.start(config);
     return { pid: proc.pid };
@@ -294,7 +349,9 @@ export class ProcessManager implements IProcessPort {
 
   async dispose(): Promise<void> {
     this.isDisposed = true;
-    const stopPromises = Array.from(this.managed.keys()).map((id) => this.stop(id, true));
+    const stopPromises = Array.from(this.managed.keys()).map((id) =>
+      this.stop(id, true),
+    );
     await Promise.allSettled(stopPromises);
     this.listeners.clear();
     this.managed.clear();

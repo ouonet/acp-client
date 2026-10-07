@@ -1,0 +1,101 @@
+/* Chat Welcome Cockpit - Fully Restored from Tuned Design */
+.chat-welcome-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  height: 100%;
+  padding: 24px;
+}
+.welcome-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 380px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.welcome-icon-glow {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(14, 99, 156, 0.12);
+  border: 1px solid rgba(14, 99, 156, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+  margin-bottom: 14px;
+}
+.welcome-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--fg-primary);
+}
+.welcome-subtitle {
+  font-size: 12px;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+.welcome-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.welcome-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(127, 127, 127, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0 8px;
+  flex: 1;
+}
+.welcome-agent-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  font-size: 12px;
+  padding: 6px 18px 6px 2px;
+  width: 100%;
+  outline: none;
+  cursor: pointer;
+}
+.welcome-select-wrapper .select-chevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+}
+.btn-welcome-connect {
+  background: var(--accent-color);
+  color: var(--accent-fg);
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+.btn-welcome-connect:hover {
+  background: var(--accent-hover);
+}

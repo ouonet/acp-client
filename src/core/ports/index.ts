@@ -2,14 +2,14 @@
  * Ports: Hexagonal Architecture Abstract Boundaries
  */
 
-import type { AgentConfig } from '../types/config';
-import type { SessionData, SessionSummary } from '../types/session';
+import type { AgentConfig } from "../types/config";
 
 export interface Disposable {
   dispose(): void | Promise<void>;
 }
 
-export type ProcessStatus = 'stopped' | 'starting' | 'running' | 'restarting' | 'error';
+export type ProcessStatus =
+  "stopped" | "starting" | "running" | "restarting" | "error";
 
 export interface ProcessStatusEvent {
   agentId: string;
@@ -18,10 +18,19 @@ export interface ProcessStatusEvent {
   error?: string;
 }
 
-export type ProcessLogCallback = (agentId: string, text: string, stream: 'stdout' | 'stderr' | 'system') => void;
+export type ProcessLogCallback = (
+  agentId: string,
+  text: string,
+  stream: "stdout" | "stderr" | "system",
+) => void;
 
 export interface IProcessPort {
-  start(config: AgentConfig): Promise<{ pid: number; stdin: NodeJS.WritableStream; stdout: NodeJS.ReadableStream; stderr: NodeJS.ReadableStream }>;
+  start(config: AgentConfig): Promise<{
+    pid: number;
+    stdin: NodeJS.WritableStream;
+    stdout: NodeJS.ReadableStream;
+    stderr: NodeJS.ReadableStream;
+  }>;
   stop(agentId: string, force?: boolean): Promise<void>;
   restart(agentId: string): Promise<{ pid: number }>;
   getStatus(agentId: string): ProcessStatus;
@@ -39,17 +48,22 @@ export interface ITransportPort {
 export interface IWorkspacePort {
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
-  executeCommand(command: string, cwd?: string): Promise<{ stdout: string; stderr: string; exitCode: number }>;
+  /** Apply an editor edit only against the expected complete original text. */
+  applyFileEdit?(
+    path: string,
+    originalContent: string,
+    modifiedContent: string,
+  ): Promise<boolean>;
+  executeCommand(
+    command: string,
+    cwd?: string,
+  ): Promise<{ stdout: string; stderr: string; exitCode: number }>;
   listDirectory?(path: string): Promise<string[]>;
   fileExists?(path: string): Promise<boolean>;
   deleteFile?(path: string): Promise<void>;
 }
 
 export interface IStoragePort {
-  saveSession(sessionData: SessionData): Promise<void>;
-  loadSession(sessionId: string): Promise<SessionData | null>;
-  listSavedSessions(): Promise<SessionSummary[]>;
-  deleteSavedSession(sessionId: string): Promise<void>;
   recordInputHistory(prompt: string): Promise<void>;
   getInputHistory(): Promise<string[]>;
   saveAgentConfigs(configs: AgentConfig[]): Promise<void>;

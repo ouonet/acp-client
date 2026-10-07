@@ -1,0 +1,86 @@
+.acp-header.lifecycle-header { height: auto; min-height: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 0; gap: 0; flex-shrink: 0; background: var(--bg-primary); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.agent-header, .session-header { display: flex; align-items: center; gap: 4px; padding: 6px 8px; min-width: 0; width: 100%; box-sizing: border-box; }
+.agent-header { min-height: 42px; border-bottom: 1px solid var(--border-subtle); }
+.session-header { min-height: 38px; }
+.lifecycle-header button, .lifecycle-header summary { font: inherit; font-size: 12px; line-height: 20px; }
+.lifecycle-header button { color: var(--fg-primary); background: transparent; border: 0; border-radius: 4px; padding: 3px 7px; cursor: pointer; }
+.lifecycle-header button:hover, .header-menu summary:hover { background: var(--card-bg); }
+.lifecycle-header button:disabled { opacity: .4; cursor: default; }
+.lifecycle-header .agent-tab-group button { border: 0; background: transparent; color: var(--fg-secondary); padding: 4px 6px; }
+.lifecycle-header .agent-tab-group [aria-selected=true] { color: var(--fg-primary); background: var(--card-bg); font-weight: 500; }
+.lifecycle-header .agent-tab-group .tab-info { font-size: 13px; }
+.session-heading { color: var(--fg-secondary); font-size: 12px; }
+.session-heading > span:first-child { color: var(--fg-primary); font-weight: 500; }
+.session-heading .badge { color: var(--fg-muted); background: transparent; border: 0; padding: 0; font-size: 10px; font-weight: 400; }
+.header-menu summary::-webkit-details-marker { display: none; }
+.agent-tabs { display: flex; flex: 1; gap: 4px; overflow: auto; min-width: 0; scrollbar-width: thin; }
+.agent-tab-group { display: flex; align-items: center; flex-shrink: 0; border: 0; border-radius: 5px; }
+.agent-tab-group button { border: 0; background: transparent; padding: 4px; color: inherit; cursor: pointer; }
+.agent-tab-group [role=tab] { display: flex; align-items: center; gap: 5px; max-width: 180px; }
+.agent-tab-group [role=tab] > span:not(.badge) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agent-tab-group:has([aria-selected=true]) { box-shadow: inset 0 -2px var(--focus-border); }
+.session-heading { min-width: 0; flex: 1; display: flex; gap: 6px; align-items: center; }
+.session-heading > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lifecycle-config button, .history-drawer button, .connection-info button { color: var(--vscode-foreground); background: var(--vscode-button-secondaryBackground); border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px 8px; cursor: pointer; }
+.lifecycle-header button:disabled, .lifecycle-config button:disabled, .history-drawer button:disabled { opacity: .5; cursor: default; }
+.lifecycle-header button:focus-visible, .header-menu summary:focus-visible, .lifecycle-config button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+.header-menu { position: relative; flex-shrink: 0; }
+.header-menu summary { cursor: pointer; padding: 5px; list-style: none; }
+.menu-content { position: absolute; right: 0; top: 100%; z-index: 30; min-width: 160px; max-width: calc(100vw - 24px); max-height: 50vh; overflow: auto; background: var(--vscode-menu-background, var(--vscode-editor-background)); padding: 5px; border: 1px solid var(--vscode-panel-border); box-shadow: 0 4px 12px #0004; }
+.menu-content button { display: block; width: 100%; text-align: left; margin: 2px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.drawer-overlay { position: fixed; z-index: 100; }
+.drawer-panel { background: var(--vscode-sideBar-background, var(--bg-primary)); width: min(440px, 100%); min-width: 0; overflow: hidden; }
+.drawer-header h2 { font-size: 14px; font-weight: 600; }
+.connection-info .drawer-body, .history-drawer .drawer-body { display: flex; flex-direction: column; gap: 12px; }
+.connection-info h3 { font-size: 13px; }
+.connection-info h4 { font-size: 12px; margin-bottom: 6px; }
+.history-drawer .drawer-search { padding: 12px 16px 0; }
+.history-drawer .session-title { max-width: 100%; overflow-wrap: anywhere; }
+.lifecycle-config { width: min(440px, 100%); max-width: 100%; display: flex; flex-direction: column; height: 100%; }
+.lifecycle-config .drawer-header, .config-selector, .lifecycle-config .config-form-actions { flex-shrink: 0; }
+.config-selector { display: flex; gap: 8px; padding: 10px 12px; }
+.config-selector select { min-width: 0; flex: 1; }
+.lifecycle-config .config-body { overflow-y: auto; min-height: 0; flex: 1; display: block; padding: 12px; }
+.lifecycle-config .agent-edit-form { display: flex; flex-direction: column; gap: 12px; }
+.lifecycle-config .form-label { display: flex; flex-direction: column; gap: 5px; }
+.lifecycle-config .form-control { width: 100%; min-width: 0; box-sizing: border-box; }
+.lifecycle-config .config-form-actions { display: flex; justify-content: flex-end; padding: 12px; gap: 8px; border-top: 1px solid var(--vscode-panel-border); background: var(--vscode-editor-background); }
+.lifecycle-config .btn-primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.directory-field { display: flex; align-items: flex-end; gap: 8px; }
+.directory-field label { flex: 1; min-width: 0; }
+.environment-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.environment-row input { flex: 1; }
+.lifecycle-config fieldset { border: 1px solid var(--border-subtle); border-radius: 4px; min-width: 0; padding: 10px; }
+.lifecycle-config legend { padding: 0 4px; font-size: 12px; }
+.lifecycle-config fieldset .field-help { margin-top: 8px; }
+.field-help { color: var(--vscode-descriptionForeground); font-size: 11px; margin: 0; }
+.inline-error { color: var(--vscode-errorForeground); padding: 6px; }
+.launch-config-notice { padding: 8px; border-left: 2px solid var(--vscode-focusBorder); }
+.connection-info pre, .lifecycle-config pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.connection-info dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.connection-info dd { margin: 0; overflow-wrap: anywhere; }
+.history-drawer .session-item { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; text-align: left; }
+.history-drawer .session-meta { display: flex; flex-direction: column; overflow-wrap: anywhere; }
+/* Fixed toolbar targets keep glyphs aligned even in narrow sidebars. */
+.lifecycle-header .action-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  box-sizing: border-box; width: 28px; height: 28px; flex: 0 0 28px;
+  padding: 0; line-height: 1; color: var(--fg-secondary);
+}
+.lifecycle-header .action-icon-btn:hover:not(:disabled) {
+  color: var(--fg-primary); background: var(--vscode-toolbar-hoverBackground, var(--card-bg));
+}
+.lifecycle-header .agent-tab-close { width: 24px; height: 24px; flex-basis: 24px; }
+.agent-tab-close .action-icon { width: 14px; height: 14px; flex-basis: 14px; }
+.session-heading > span:first-child { min-width: 0; }
+
+@media (max-width: 400px) {
+  .agent-header, .session-header { padding: 5px; gap: 3px; }
+  .agent-tab-group [role=tab] { max-width: 110px; }
+  .agent-tab-group .tab-info { display: none; }
+  .session-header button { font-size: 11px; padding: 4px; }
+  .session-heading .badge { display: none; }
+  .config-selector, .lifecycle-config .config-form-actions { padding: 8px; gap: 5px; }
+  .lifecycle-config .config-form-actions button { font-size: 11px; padding: 5px; }
+}

@@ -1,14 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { ProcessManager } from '../../src/core/process/process-manager';
-import { AcpClientAdapter } from '../../src/core/protocol/acp-client-adapter';
-import { SessionHub } from '../../src/core/session/session-hub';
-import { StorageManager } from '../../src/core/storage/storage-manager';
-import type { AgentConfig } from '../../src/core/types/config';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtemp, rm, readdir } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { ProcessManager } from "../../src/core/process/process-manager";
+import { AcpClientAdapter } from "../../src/core/protocol/acp-client-adapter";
+import { SessionHub } from "../../src/core/session/session-hub";
+import { StorageManager } from "../../src/core/storage/storage-manager";
+import type { AgentConfig } from "../../src/core/types/config";
 
-describe('T7: M1 Headless Core Engine Integration Suite', () => {
+describe("T7: M1 Headless Core Engine Integration Suite", () => {
   let tempDir: string;
   let processManager: ProcessManager;
   let storageManager: StorageManager;
@@ -94,7 +94,7 @@ describe('T7: M1 Headless Core Engine Integration Suite', () => {
   `;
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'acp-integration-test-'));
+    tempDir = await mkdtemp(join(tmpdir(), "acp-integration-test-"));
     processManager = new ProcessManager(300);
     storageManager = new StorageManager(tempDir);
 
@@ -107,17 +107,17 @@ describe('T7: M1 Headless Core Engine Integration Suite', () => {
           const config: AgentConfig = {
             id: agentId,
             name: `Agent-${agentId}`,
-            command: 'node',
-            args: ['-e', agentScript],
+            command: "node",
+            args: ["-e", agentScript],
             env: {},
-            transport: 'stdio',
+            transport: "stdio",
             enabled: true,
           };
           const proc = await processManager.start(config);
           adapter = new AcpClientAdapter({
             input: proc.stdout,
             output: proc.stdin,
-            clientInfo: { name: 'acp-client-test', version: '0.1.0' },
+            clientInfo: { name: "acp-client-test", version: "0.1.0" },
           });
           await adapter.initialize();
           adapters.set(agentId, adapter);
@@ -137,34 +137,37 @@ describe('T7: M1 Headless Core Engine Integration Suite', () => {
     await rm(tempDir, { recursive: true, force: true }).catch(() => {});
   });
 
-  it('should run end-to-end full turn over real process stdio and persist atomically', async () => {
-    const session = await sessionHub.createSession('agent-main', 'End-to-End Chat');
+  it("runs a real process turn with runtime-only transcripts and separate input history", async () => {
+    const session = await sessionHub.createSession(
+      "agent-main",
+      "End-to-End Chat",
+    );
 
-    expect(session.status).toBe('idle');
-    expect(processManager.getStatus('agent-main')).toBe('running');
+    expect(session.status).toBe("idle");
+    expect(processManager.getStatus("agent-main")).toBe("running");
 
-    await session.prompt('Hello ACP');
+    await session.prompt("Hello ACP");
 
-    expect(session.status).toBe('idle');
+    expect(session.status).toBe("idle");
     const data = session.serialize();
     expect(data.messages).toHaveLength(2);
-    expect(data.messages[0].content).toBe('Hello ACP');
-    expect(data.messages[1].thinking).toContain('Analyzing query');
-    expect(data.messages[1].content).toContain('Subprocess response');
+    expect(data.messages[0].content).toBe("Hello ACP");
+    expect(data.messages[1].thinking).toContain("Analyzing query");
+    expect(data.messages[1].content).toContain("Subprocess response");
 
-    // Verify storage persistence
-    const saved = await storageManager.loadSession(session.id);
-    expect(saved).not.toBeNull();
-    expect(saved?.id).toBe(session.id);
-    expect(saved?.messages).toHaveLength(2);
+    expect(await readdir(tempDir)).toEqual([]);
+    await storageManager.recordInputHistory('Hello ACP');
+    expect(await storageManager.getInputHistory()).toEqual(['Hello ACP']);
+    expect(await readdir(tempDir)).toEqual(['history.json']);
+    expect(session.serialize()).toMatchObject({ attached: true, runtimeRevision: 1 });
   });
 
-  it('should fork a session into an isolated branch with independent history', async () => {
-    const parent = await sessionHub.createSession('agent-main', 'Root Thread');
-    await parent.prompt('Turn 1 Question');
+  it("should fork a session into an isolated branch with independent history", async () => {
+    const parent = await sessionHub.createSession("agent-main", "Root Thread");
+    await parent.prompt("Turn 1 Question");
 
     const forked = await sessionHub.forkSession(parent.id, {
-      title: 'Branch Thread',
+      title: "Branch Thread",
     });
 
     expect(forked.id).not.toBe(parent.id);
@@ -172,37 +175,37 @@ describe('T7: M1 Headless Core Engine Integration Suite', () => {
     expect(forked.serialize().messages).toHaveLength(2);
 
     // Prompt the forked session
-    await forked.prompt('Turn 2 Question on Branch');
+    await forked.prompt("Turn 2 Question on Branch");
 
     expect(forked.serialize().messages).toHaveLength(4);
     expect(parent.serialize().messages).toHaveLength(2); // parent unaffected!
 
-    // Verify both exist independently in storage
-    const savedParent = await storageManager.loadSession(parent.id);
-    const savedForked = await storageManager.loadSession(forked.id);
-
-    expect(savedParent?.messages).toHaveLength(2);
-    expect(savedForked?.messages).toHaveLength(4);
+    expect(parent.serialize().attached).toBe(false);
+    expect(sessionHub.listSessions().map(session => session.id)).toEqual([forked.id]);
+    expect(await readdir(tempDir)).toEqual([]);
   });
 
-  it('should handle agent crash cascade and allow restarting process', async () => {
-    const session = await sessionHub.createSession('agent-crashing', 'Fragile Chat');
-    expect(session.status).toBe('idle');
+  it("should handle agent crash cascade and allow restarting process", async () => {
+    const session = await sessionHub.createSession(
+      "agent-crashing",
+      "Fragile Chat",
+    );
+    expect(session.status).toBe("idle");
 
     // Prompt the agent to crash itself unexpectedly
-    const crashPrompt = session.prompt('CRASH_NOW');
+    const crashPrompt = session.prompt("CRASH_NOW");
 
     // Verify in-flight prompt rejects with error
     await expect(crashPrompt).rejects.toThrow();
 
     // Verify status cascaded to error
-    expect(session.status).toBe('error');
+    expect(session.status).toBe("error");
     await new Promise((r) => setTimeout(r, 30));
-    expect(processManager.getStatus('agent-crashing')).toBe('error');
+    expect(processManager.getStatus("agent-crashing")).toBe("error");
 
     // Restart process
-    const { pid } = await processManager.restart('agent-crashing');
+    const { pid } = await processManager.restart("agent-crashing");
     expect(pid).toBeGreaterThan(0);
-    expect(processManager.getStatus('agent-crashing')).toBe('running');
+    expect(processManager.getStatus("agent-crashing")).toBe("running");
   });
 });

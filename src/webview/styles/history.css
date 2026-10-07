@@ -1,0 +1,137 @@
+.history-drawer .drawer-search {
+  padding: 8px 12px;
+}
+.history-drawer .drawer-search input {
+  width: 100%;
+  min-width: 0;
+}
+.history-drawer .drawer-body.session-list {
+  gap: 0;
+  padding: 0 8px 8px;
+}
+.history-drawer .session-list > p,
+.history-drawer .session-list > [role="alert"] {
+  padding: 8px 4px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.history-session-row {
+  flex: none;
+  min-width: 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.history-session-summary {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.history-session-row.current {
+  background: var(--vscode-list-inactiveSelectionBackground, var(--card-bg));
+}
+.history-drawer .history-session-row .session-item {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  border: 0;
+  background: transparent;
+  padding: 7px 4px;
+  gap: 3px;
+  color: var(--fg-primary);
+  font: inherit;
+  text-align: left;
+}
+.history-session-summary:hover {
+  background: var(--vscode-list-hoverBackground, var(--card-bg));
+}
+.history-session-row .session-heading-line,
+.history-drawer .history-session-row .session-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.history-drawer .history-session-row .session-title,
+.history-session-row .session-time,
+.history-session-row .session-cwd {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+.history-session-row .session-title {
+  flex: 1;
+  font-size: 12px;
+  line-height: 17px;
+}
+.history-session-row .session-current {
+  flex: none;
+  font-size: 10px;
+  color: var(--fg-secondary);
+  white-space: nowrap;
+}
+.history-session-row .session-meta {
+  color: var(--fg-muted);
+  font-size: 10px;
+  line-height: 14px;
+}
+.history-session-row .session-time {
+  flex: 0 1 auto;
+}
+.history-session-row .session-cwd {
+  flex: 1;
+}
+.history-session-row .session-cwd::before {
+  content: "· ";
+}
+.history-session-row .session-actions {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+.history-drawer .session-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--fg-secondary);
+}
+.history-drawer .session-actions button:hover {
+  background: var(--vscode-toolbar-hoverBackground, var(--card-bg));
+  color: var(--fg-primary);
+}
+.history-drawer .session-delete:not(:disabled) {
+  color: var(--status-error);
+}
+.history-drawer button:focus-visible {
+  outline: 1px solid var(--focus-border);
+  outline-offset: -1px;
+}
+.session-delete-confirm,
+.session-feedback {
+  padding: 4px 6px 8px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.session-feedback {
+  color: var(--fg-secondary);
+}
+.session-feedback[role="alert"] {
+  color: var(--status-error);
+}
+.session-confirm-id {
+  color: var(--fg-muted);
+}
+.session-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}

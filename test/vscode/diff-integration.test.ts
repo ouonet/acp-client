@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as vscode from 'vscode';
-import { AcpViewProvider } from '../../src/vscode/acp-view-provider';
-import type { IWorkspacePort } from '../../src/core/ports';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as vscode from "vscode";
+import { AcpViewProvider } from "../../src/vscode/acp-view-provider";
+import type { IWorkspacePort } from "../../src/core/ports";
 
-describe('T1: Diff Integration with VS Code Extension', () => {
+describe("T1: Diff Integration with VS Code Extension", () => {
   let mockWorkspaceAdapter: IWorkspacePort;
   let mockSessionHub: any;
   let mockProcessManager: any;
@@ -12,9 +12,12 @@ describe('T1: Diff Integration with VS Code Extension', () => {
 
   beforeEach(() => {
     mockWorkspaceAdapter = {
-      readFile: vi.fn().mockResolvedValue('original file content'),
+      readFile: vi.fn().mockResolvedValue("original file content"),
       writeFile: vi.fn().mockResolvedValue(undefined),
-      executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
+      applyFileEdit: vi.fn().mockResolvedValue(undefined),
+      executeCommand: vi
+        .fn()
+        .mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 }),
       deleteFile: vi.fn().mockResolvedValue(undefined),
       fileExists: vi.fn().mockResolvedValue(true),
       listDirectory: vi.fn().mockResolvedValue([]),
@@ -29,7 +32,7 @@ describe('T1: Diff Integration with VS Code Extension', () => {
     };
 
     mockProcessManager = {
-      getStatus: vi.fn().mockReturnValue('idle'),
+      getStatus: vi.fn().mockReturnValue("idle"),
       onStatusChange: vi.fn().mockReturnValue({ dispose: () => {} }),
     };
 
@@ -39,7 +42,7 @@ describe('T1: Diff Integration with VS Code Extension', () => {
     };
 
     provider = new AcpViewProvider({
-      extensionUri: vscode.Uri.file('/mock/extension'),
+      extensionUri: vscode.Uri.file("/mock/extension"),
       sessionHub: mockSessionHub,
       processManager: mockProcessManager,
       storageManager: mockStorageManager,
@@ -47,41 +50,47 @@ describe('T1: Diff Integration with VS Code Extension', () => {
     });
   });
 
-  it('should write applied diff content to workspace port on APPLY_FILE_DIFF', async () => {
+  it("should write applied diff content to workspace port on APPLY_FILE_DIFF", async () => {
+    vi.spyOn(vscode.window, "showWarningMessage").mockResolvedValue(
+      "Apply" as any,
+    );
+    (mockWorkspaceAdapter.applyFileEdit as any).mockResolvedValue(true);
     const handleAction = (provider as any).handleAction.bind(provider);
 
     await handleAction({
-      type: 'APPLY_FILE_DIFF',
+      type: "APPLY_FILE_DIFF",
       payload: {
-        filePath: '/workspace/src/example.ts',
-        content: 'new modified content',
+        filePath: "/workspace/src/example.ts",
+        content: "new modified content",
+        originalContent: "original file content",
       },
     });
 
-    expect(mockWorkspaceAdapter.writeFile).toHaveBeenCalledWith(
-      '/workspace/src/example.ts',
-      'new modified content'
+    expect(mockWorkspaceAdapter.applyFileEdit).toHaveBeenCalledWith(
+      "/workspace/src/example.ts",
+      "original file content",
+      "new modified content",
     );
   });
 
-  it('should call vscode.commands.executeCommand with vscode.diff on OPEN_DIFF_EDITOR', async () => {
-    const executeCommandSpy = vi.spyOn(vscode.commands, 'executeCommand');
+  it("should call vscode.commands.executeCommand with vscode.diff on OPEN_DIFF_EDITOR", async () => {
+    const executeCommandSpy = vi.spyOn(vscode.commands, "executeCommand");
     const handleAction = (provider as any).handleAction.bind(provider);
 
     await handleAction({
-      type: 'OPEN_DIFF_EDITOR',
+      type: "OPEN_DIFF_EDITOR",
       payload: {
-        filePath: '/workspace/src/example.ts',
-        originalContent: 'line 1\nline 2',
-        modifiedContent: 'line 1\nline 2 modified',
+        filePath: "/workspace/src/example.ts",
+        originalContent: "line 1\nline 2",
+        modifiedContent: "line 1\nline 2 modified",
       },
     });
 
     expect(executeCommandSpy).toHaveBeenCalledWith(
-      'vscode.diff',
+      "vscode.diff",
       expect.anything(),
       expect.anything(),
-      expect.stringContaining('example.ts')
+      expect.stringContaining("example.ts"),
     );
   });
 });

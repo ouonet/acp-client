@@ -9,7 +9,7 @@ export interface AgentConfig {
   args: string[];
   env: Record<string, string>;
   cwd?: string;
-  transport: 'stdio' | 'websocket';
+  transport: "stdio" | "websocket";
   websocketUrl?: string;
   enabled: boolean;
   isPreset?: boolean;
@@ -26,7 +26,7 @@ export interface McpServerConfig {
   command: string;
   args: string[];
   env?: Record<string, string>;
-  transport: 'stdio' | 'sse' | 'websocket';
+  transport: "stdio" | "sse" | "websocket";
   url?: string;
   enabled: boolean;
 }
@@ -45,7 +45,7 @@ export interface SkillInfo {
   name: string;
   description: string;
   path: string;
-  scope: 'workspace' | 'global';
+  scope: "workspace" | "global";
   triggers?: string[];
   content: string;
 }

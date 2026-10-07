@@ -7,9 +7,14 @@ export class ProcessError extends Error {
   readonly exitCode?: number | null;
   readonly signal?: string | null;
 
-  constructor(agentId: string, message: string, exitCode?: number | null, signal?: string | null) {
+  constructor(
+    agentId: string,
+    message: string,
+    exitCode?: number | null,
+    signal?: string | null,
+  ) {
     super(`[ProcessError: ${agentId}] ${message}`);
-    this.name = 'ProcessError';
+    this.name = "ProcessError";
     this.agentId = agentId;
     this.exitCode = exitCode;
     this.signal = signal;
@@ -23,7 +28,7 @@ export class ProtocolError extends Error {
 
   constructor(code: number, message: string, data?: any) {
     super(`[ProtocolError ${code}] ${message}`);
-    this.name = 'ProtocolError';
+    this.name = "ProtocolError";
     this.code = code;
     this.data = data;
     Object.setPrototypeOf(this, new.target.prototype);
@@ -35,7 +40,7 @@ export class SessionError extends Error {
 
   constructor(sessionId: string, message: string) {
     super(`[SessionError: ${sessionId}] ${message}`);
-    this.name = 'SessionError';
+    this.name = "SessionError";
     this.sessionId = sessionId;
     Object.setPrototypeOf(this, new.target.prototype);
   }
@@ -45,8 +50,8 @@ export class StorageError extends Error {
   readonly filePath?: string;
 
   constructor(message: string, filePath?: string) {
-    super(`[StorageError] ${message}${filePath ? ` (file: ${filePath})` : ''}`);
-    this.name = 'StorageError';
+    super(`[StorageError] ${message}${filePath ? ` (file: ${filePath})` : ""}`);
+    this.name = "StorageError";
     this.filePath = filePath;
     Object.setPrototypeOf(this, new.target.prototype);
   }

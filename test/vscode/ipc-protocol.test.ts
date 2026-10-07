@@ -1,51 +1,66 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi } from "vitest";
 import {
   isWebviewAction,
   isExtensionMessage,
   type WebviewAction,
   type ExtensionMessage,
   type WebviewStateSnapshot,
-} from '../../src/shared/ipc-protocol';
-import { VsCodeWorkspaceAdapter } from '../../src/vscode/ports/vscode-workspace-adapter';
+} from "../../src/shared/ipc-protocol";
+import { VsCodeWorkspaceAdapter } from "../../src/vscode/ports/vscode-workspace-adapter";
 
-describe('T1: Shared IPC Protocol & VS Code Workspace Adapter', () => {
-  describe('IPC Message Validation & Type Guards', () => {
-    it('should correctly identify valid WebviewAction objects', () => {
+describe("T1: Shared IPC Protocol & VS Code Workspace Adapter", () => {
+  describe("IPC Message Validation & Type Guards", () => {
+    it("should correctly identify valid WebviewAction objects", () => {
       const validActions: WebviewAction[] = [
-        { type: 'READY' },
+        { type: "READY" },
         {
-          type: 'SEND_PROMPT',
+          type: "SEND_PROMPT",
           payload: {
-            sessionId: 'sess-1',
-            prompt: 'Hello world',
-            options: { model: 'gpt-4o', thinkingLevel: 'medium' },
+            sessionId: "sess-1",
+            prompt: "Hello world",
+            options: { model: "gpt-4o", thinkingLevel: "medium" },
           },
         },
-        { type: 'CANCEL_PROMPT', payload: { sessionId: 'sess-1' } },
+        { type: "CANCEL_PROMPT", payload: { sessionId: "sess-1" } },
         {
-          type: 'RESPOND_PERMISSION',
-          payload: { sessionId: 'sess-1', requestId: 'req-1', decision: 'allow' },
+          type: "RESPOND_PERMISSION",
+          payload: {
+            sessionId: "sess-1",
+            requestId: "req-1",
+            decision: "allow",
+          },
         },
         {
-          type: 'CREATE_SESSION',
-          payload: { agentId: 'agent-1', title: 'New Chat' },
+          type: "CREATE_SESSION",
+          payload: { agentId: "agent-1", title: "New Chat" },
         },
         {
-          type: 'FORK_SESSION',
-          payload: { sourceSessionId: 'sess-1', options: { upToMessageIndex: 2 } },
+          type: "FORK_SESSION",
+          payload: {
+            sourceSessionId: "sess-1",
+            options: { upToMessageIndex: 2 },
+          },
         },
         {
-          type: 'TEST_AGENT_CONNECTION',
+          type: "TEST_AGENT_CONNECTION",
           payload: {
             config: {
-              id: 'agent-test',
-              name: 'Test Agent',
-              command: 'node',
+              id: "agent-test",
+              name: "Test Agent",
+              command: "node",
               args: [],
               env: {},
-              transport: 'stdio',
+              transport: "stdio",
               enabled: true,
             },
+          },
+        },
+        {
+          type: "OPEN_FILE",
+          payload: {
+            filePath: "src/index.ts",
+            startLine: 10,
+            endLine: 20,
           },
         },
       ];
@@ -57,36 +72,83 @@ describe('T1: Shared IPC Protocol & VS Code Workspace Adapter', () => {
       // Invalid actions
       expect(isWebviewAction(null)).toBe(false);
       expect(isWebviewAction({})).toBe(false);
-      expect(isWebviewAction({ type: 'UNKNOWN_TYPE_XYZ' })).toBe(false);
+      expect(isWebviewAction({ type: "UNKNOWN_TYPE_XYZ" })).toBe(false);
     });
 
-    it('should correctly identify valid ExtensionMessage objects', () => {
+    it.each([
+      [{ type: "CONNECT_AGENT", payload: { agentId: "a" } }, true],
+      [{ type: "CONNECT_AGENT", payload: {} }, false],
+      [
+        {
+          type: "APPLY_FILE_DIFF",
+          payload: { filePath: "a", content: "partial" },
+        },
+        false,
+      ],
+      [
+        {
+          type: "APPLY_FILE_DIFF",
+          payload: { filePath: "a", originalContent: "", content: "new file" },
+        },
+        true,
+      ],
+      [
+        {
+          type: "RESPOND_PERMISSION",
+          payload: { sessionId: "s", requestId: "r", decision: "execute" },
+        },
+        false,
+      ],
+      [
+        {
+          type: "SEND_PROMPT",
+          payload: { sessionId: "", prompt: "hello", requestId: 42 },
+        },
+        false,
+      ],
+    ])("validates action payload %#", (action, valid) => {
+      expect(isWebviewAction(action)).toBe(valid);
+    });
+
+    it.each([
+      ["completed", true],
+      ["other", false],
+    ])("validates prompt result %s", (status, valid) => {
+      expect(
+        isExtensionMessage({
+          type: "PROMPT_RESULT",
+          payload: { requestId: "r", sessionId: "s", status },
+        }),
+      ).toBe(valid);
+    });
+
+    it("should correctly identify valid ExtensionMessage objects", () => {
       const snapshot: WebviewStateSnapshot = {
         sessions: [],
         agentConfigs: [],
-        inputHistory: ['prev prompt 1'],
-        processStatuses: { 'agent-1': 'running' },
+        inputHistory: ["prev prompt 1"],
+        processStatuses: { "agent-1": "running" },
       };
 
       const validMessages: ExtensionMessage[] = [
-        { type: 'STATE_SNAPSHOT', payload: snapshot },
+        { type: "STATE_SNAPSHOT", payload: snapshot },
         {
-          type: 'SESSION_EVENT',
+          type: "SESSION_EVENT",
           payload: {
-            sessionId: 'sess-1',
+            sessionId: "sess-1",
             event: {
-              type: 'chunk',
-              sessionId: 'sess-1',
-              payload: { text: 'chunk text' },
+              type: "chunk",
+              sessionId: "sess-1",
+              payload: { text: "chunk text" },
             },
           },
         },
         {
-          type: 'PROCESS_STATUS_CHANGE',
-          payload: { agentId: 'agent-1', status: 'running', pid: 1234 },
+          type: "PROCESS_STATUS_CHANGE",
+          payload: { agentId: "agent-1", status: "running", pid: 1234 },
         },
         {
-          type: 'TEST_CONNECTION_RESULT',
+          type: "TEST_CONNECTION_RESULT",
           payload: {
             success: true,
             protocolVersion: 1,
@@ -100,27 +162,29 @@ describe('T1: Shared IPC Protocol & VS Code Workspace Adapter', () => {
       }
 
       expect(isExtensionMessage(null)).toBe(false);
-      expect(isExtensionMessage({ type: 'RANDOM' })).toBe(false);
+      expect(isExtensionMessage({ type: "RANDOM" })).toBe(false);
     });
   });
 
-  describe('VsCodeWorkspaceAdapter', () => {
-    it('should read file, write file, and execute commands via provided VS Code mocks', async () => {
+  describe("VsCodeWorkspaceAdapter", () => {
+    it("should read file, write file, and execute commands via provided VS Code mocks", async () => {
       const mockFiles = new Map<string, Uint8Array>();
       const mockFs = {
         readFile: vi.fn().mockImplementation(async (uri: any) => {
           const content = mockFiles.get(uri.fsPath);
-          if (!content) throw new Error('File not found');
+          if (!content) throw new Error("File not found");
           return content;
         }),
-        writeFile: vi.fn().mockImplementation(async (uri: any, bytes: Uint8Array) => {
-          mockFiles.set(uri.fsPath, bytes);
-        }),
+        writeFile: vi
+          .fn()
+          .mockImplementation(async (uri: any, bytes: Uint8Array) => {
+            mockFiles.set(uri.fsPath, bytes);
+          }),
       };
 
       const mockExecutor = vi.fn().mockResolvedValue({
-        stdout: 'cmd output',
-        stderr: '',
+        stdout: "cmd output",
+        stderr: "",
         exitCode: 0,
       });
 
@@ -130,18 +194,21 @@ describe('T1: Shared IPC Protocol & VS Code Workspace Adapter', () => {
       });
 
       // Test write
-      await adapter.writeFile('/workspace/test.txt', 'hello from adapter');
+      await adapter.writeFile("/workspace/test.txt", "hello from adapter");
       expect(mockFs.writeFile).toHaveBeenCalled();
 
       // Test read
-      const readContent = await adapter.readFile('/workspace/test.txt');
-      expect(readContent).toBe('hello from adapter');
+      const readContent = await adapter.readFile("/workspace/test.txt");
+      expect(readContent).toBe("hello from adapter");
 
       // Test execute
-      const cmdResult = await adapter.executeCommand('git status', '/workspace');
+      const cmdResult = await adapter.executeCommand(
+        "git status",
+        "/workspace",
+      );
       expect(cmdResult.exitCode).toBe(0);
-      expect(cmdResult.stdout).toBe('cmd output');
-      expect(mockExecutor).toHaveBeenCalledWith('git status', '/workspace');
+      expect(cmdResult.stdout).toBe("cmd output");
+      expect(mockExecutor).toHaveBeenCalledWith("git status", "/workspace");
     });
   });
 });

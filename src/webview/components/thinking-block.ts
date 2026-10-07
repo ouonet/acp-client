@@ -3,7 +3,7 @@
  * Displays chain-of-thought tokens in a clean expandable card.
  */
 
-import { ICONS } from './icons';
+import { ICONS } from "./icons";
 
 export interface ThinkingBlockOptions {
   container: HTMLElement;
@@ -28,24 +28,25 @@ export class ThinkingBlockComponent {
   }
 
   private render(): void {
-    const card = document.createElement('div');
-    card.className = `thinking-card ${this.expanded ? 'expanded' : ''}`;
+    const card = document.createElement("div");
+    card.className = `thinking-card ${this.expanded ? "expanded" : ""}`;
 
-    const durationLabel = this.durationSeconds > 0 ? `${this.durationSeconds.toFixed(1)}s` : 'done';
+    const durationLabel =
+      this.durationSeconds > 0 ? ` (${this.durationSeconds.toFixed(1)}s)` : "";
 
     card.innerHTML = `
       <div class="thinking-header">
         <span class="thinking-header-left">
           <span class="thinking-toggle-icon">${this.expanded ? ICONS.chevronDown : ICONS.chevronRight}</span>
           <span class="thinking-brain-icon">${ICONS.brain}</span>
-          <span class="thinking-title">Thinking (${durationLabel})</span>
+          <span class="thinking-title">Thinking${durationLabel}</span>
         </span>
       </div>
       <div class="thinking-body">${this.escapeHtml(this.thinking)}</div>
     `;
 
-    const header = card.querySelector('.thinking-header') as HTMLElement;
-    header.addEventListener('click', () => {
+    const header = card.querySelector(".thinking-header") as HTMLElement;
+    header.addEventListener("click", () => {
       this.toggle();
     });
 
@@ -57,12 +58,12 @@ export class ThinkingBlockComponent {
     this.expanded = !this.expanded;
     if (this.element) {
       if (this.expanded) {
-        this.element.classList.add('expanded');
+        this.element.classList.add("expanded");
       } else {
-        this.element.classList.remove('expanded');
+        this.element.classList.remove("expanded");
       }
 
-      const icon = this.element.querySelector('.thinking-toggle-icon');
+      const icon = this.element.querySelector(".thinking-toggle-icon");
       if (icon) {
         icon.innerHTML = this.expanded ? ICONS.chevronDown : ICONS.chevronRight;
       }
@@ -71,9 +72,9 @@ export class ThinkingBlockComponent {
 
   private escapeHtml(str: string): string {
     return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 }

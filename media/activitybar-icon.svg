@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Hexagonal circuit perimeter -->
+  <polygon points="12 2.5 20.5 7.5 20.5 16.5 12 21.5 3.5 16.5 3.5 7.5" />
+  <!-- Left and right code brackets -->
+  <polyline points="8 9.5 5.5 12 8 14.5" />
+  <polyline points="16 9.5 18.5 12 16 14.5" />
+  <!-- Central neural core diamond -->
+  <polygon points="12 8 15 12 12 16 9 12" fill="currentColor" fill-opacity="0.15" />
+  <!-- Center pulse node -->
+  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+</svg>

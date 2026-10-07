@@ -2,8 +2,8 @@
  * McpInspectorComponent: Visual MCP server and tool schema inspector drawer
  */
 
-import type { McpServerConfig, McpToolInfo } from '../../core/types/config';
-import { ICONS } from './icons';
+import type { McpServerConfig, McpToolInfo } from "../../core/types/config";
+import { ICONS } from "./icons";
 
 export interface McpInspectorOptions {
   container: HTMLElement;
@@ -17,10 +17,10 @@ export interface McpInspectorOptions {
 
 function escapeHtml(str: string): string {
   return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export class McpInspectorComponent {
@@ -40,17 +40,20 @@ export class McpInspectorComponent {
     this.render();
   }
 
-  public setServersAndTools(servers: McpServerConfig[], tools: McpToolInfo[]): void {
+  public setServersAndTools(
+    servers: McpServerConfig[],
+    tools: McpToolInfo[],
+  ): void {
     this.servers = [...servers];
     this.tools = [...tools];
     this.render();
   }
 
   private formatParams(schema: any): string {
-    if (!schema || !schema.properties) return 'None';
+    if (!schema || !schema.properties) return "None";
     return Object.entries(schema.properties)
-      .map(([k, v]: [string, any]) => `${k} (${v.type || 'any'})`)
-      .join(', ');
+      .map(([k, v]: [string, any]) => `${k} (${v.type || "any"})`)
+      .join(", ");
   }
 
   private render(): void {
@@ -67,14 +70,14 @@ export class McpInspectorComponent {
           ${this.servers
             .map(
               (s) => `
-            <div class="mcp-server-chip ${s.id === this.activeServerId ? 'active' : ''}" data-server-id="${s.id}">
+            <div class="mcp-server-chip ${s.id === this.activeServerId ? "active" : ""}" data-server-id="${s.id}">
               <span class="status-indicator">●</span>
               <span class="server-name">${escapeHtml(s.name)}</span>
               <span class="server-transport">(${s.transport})</span>
             </div>
-          `
+          `,
             )
-            .join('')}
+            .join("")}
         </div>
 
         <div class="mcp-tools-header">
@@ -93,21 +96,21 @@ export class McpInspectorComponent {
                     class="mcp-tool-toggle"
                     data-server-id="${t.serverId}"
                     data-tool-name="${t.name}"
-                    ${t.enabled ? 'checked' : ''}
+                    ${t.enabled ? "checked" : ""}
                   />
                   <strong class="tool-name">${escapeHtml(t.name)}</strong>
                 </label>
                 <button class="btn-test-mcp-tool" type="button" title="Test tool call" style="display: flex; align-items: center; gap: 4px;">${ICONS.bolt} <span>Test Tool Call</span></button>
               </div>
-              <div class="mcp-tool-desc">${escapeHtml(t.description || 'No description provided')}</div>
+              <div class="mcp-tool-desc">${escapeHtml(t.description || "No description provided")}</div>
               <div class="mcp-tool-params">
                 <span class="params-label">Parameters:</span>
                 <span class="params-val">${escapeHtml(this.formatParams(t.inputSchema))}</span>
               </div>
             </div>
-          `
+          `,
             )
-            .join('')}
+            .join("")}
         </div>
       </div>
     `;
@@ -116,25 +119,28 @@ export class McpInspectorComponent {
   }
 
   private bindEvents(): void {
-    this.container.querySelector('.drawer-close-btn')?.addEventListener('click', () => {
-      this.options.onClose?.();
-    });
+    this.container
+      .querySelector(".drawer-close-btn")
+      ?.addEventListener("click", () => {
+        this.options.onClose?.();
+      });
 
-    const checkboxes = this.container.querySelectorAll<HTMLInputElement>('.mcp-tool-toggle');
+    const checkboxes =
+      this.container.querySelectorAll<HTMLInputElement>(".mcp-tool-toggle");
     checkboxes.forEach((cb) => {
-      cb.addEventListener('change', () => {
-        const sId = cb.getAttribute('data-server-id') || '';
-        const tName = cb.getAttribute('data-tool-name') || '';
+      cb.addEventListener("change", () => {
+        const sId = cb.getAttribute("data-server-id") || "";
+        const tName = cb.getAttribute("data-tool-name") || "";
         this.options.onToggleTool?.(sId, tName, cb.checked);
       });
     });
 
-    const testBtns = this.container.querySelectorAll('.btn-test-mcp-tool');
+    const testBtns = this.container.querySelectorAll(".btn-test-mcp-tool");
     testBtns.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const card = btn.closest('.mcp-tool-card');
-        const sId = card?.getAttribute('data-server-id') || '';
-        const tName = card?.getAttribute('data-tool-name') || '';
+      btn.addEventListener("click", () => {
+        const card = btn.closest(".mcp-tool-card");
+        const sId = card?.getAttribute("data-server-id") || "";
+        const tName = card?.getAttribute("data-tool-name") || "";
         this.options.onTestTool?.(sId, tName, {});
       });
     });

@@ -1,0 +1,94 @@
+.input-dock .slash-popup {
+  inset-inline: 12px;
+  display: flex;
+  flex-direction: column;
+  max-height: min(300px, 45vh);
+  overflow: hidden;
+  color: var(--fg-primary);
+  background: var(--vscode-editorSuggestWidget-background, var(--vscode-editorWidget-background, var(--bg-primary)));
+  border: 1px solid var(--vscode-editorSuggestWidget-border, var(--border-subtle));
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.slash-popup .slash-header {
+  flex: none;
+  padding: 8px 12px;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.slash-popup .slash-list {
+  min-height: 0;
+  padding: 4px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.slash-popup .slash-item {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.slash-popup .slash-item:hover,
+.slash-popup .slash-item.active,
+.slash-popup .slash-item:focus-visible {
+  background: var(--vscode-list-hoverBackground, rgba(127, 127, 127, 0.12));
+}
+
+.slash-popup .slash-item:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder, var(--accent-color));
+  outline-offset: -1px;
+}
+
+.slash-popup .slash-name,
+.slash-popup .slash-desc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slash-popup .slash-name {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.slash-popup .slash-badge {
+  align-self: center;
+  padding: 1px 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-muted);
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.slash-popup .slash-desc {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 11px;
+  line-height: 16px;
+}
