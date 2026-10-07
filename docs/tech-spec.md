@@ -23,14 +23,22 @@
 ## architecture
 
 - `src/core/` contains protocol, process, storage, session, types, errors, and ports.
+  - `AgentRuntime` (`src/core/session/agent-runtime.ts`) manages agent-level runtime state, process supervision, adapter binding, generation increments, and attached session tracking.
+  - `SessionHub` owns independently closable Agent runtimes, qualified Session identities, adapters, generation/revision fences, and process crash propagation.
+  - `ProcessManager` supervises child processes and emits status/log events.
+  - `AcpClientAdapter` maps ACP SDK requests and notifications onto session operations.
+  - `StorageManager` persists agent configurations and input prompt history with atomic rename. Session transcripts and deleted-session IDs are no longer persisted or restored locally.
+  - `SkillDiscovery` discovers skill directories and commands across configuration paths.
 - `src/vscode/` contains the extension host, webview provider, chat participant, and VS Code adapters.
-- `src/webview/` contains the browser-side single-page UI and components.
+  - `src/vscode/bridge/` decouples `AcpViewProvider` into single-responsibility IPC bridge handlers: `ActionRouter`, `ConfigHandler`, `PromptHandler`, `SessionHandler`, `PermissionHandler`, `WorkspaceHandler`, `SnapshotBroadcaster`, `AgentConfigStore`, `AgentConfigValidation`, `ConnectionTestProcess`, and `ConnectionTestRegistry`.
+  - `VsCodeWorkspaceAdapter` implements `IWorkspacePort` for workspace file reading, writing, and editor opening.
+- `src/webview/` contains the browser-side single-page UI and components:
+  - `src/webview/state/` provides a centralized reducer/flux store (`AppStoreProvider`, `ActionProvider`) with domain slices (`agent-slice`, `session-slice`, `input-slice`, `stream-messages`, `execution-projection`, `config-draft`) and ergonomic action hooks (`useLifecycleActions`, `useMessageActions`, `useHeaderMenus`, `useHistoryPage`, `useHistoryOperation`, `useConfigDrafts`).
+  - `src/webview/components/` organizes UI components into functional domains (`chat/`, `diff/`, `drawers/`, `header/`, `input/`, `action-icon.tsx`, `app.tsx`).
+  - `src/webview/styles/` organizes modular CSS stylesheets (`tokens.css`, `primitives.css`, `header.css`, `chat.css`, `welcome.css`, `input.css`, `model-picker.css`, `slash-popup.css`, `drawers.css`, `diff.css`, `code.css`, `lifecycle.css`, `history.css`) bundled into `dist/webview.css`.
+  - `src/webview/utils/` implements pure helpers for Markdown rendering, PlantUML DEFLATE encoding, syntax highlighting, CLI args parsing, and request ID generation.
 - `src/shared/ipc-protocol.ts` defines Webview-to-extension actions and extension-to-Webview messages.
-- Core dependencies point toward ports; VS Code APIs are used in outer adapters.
-- `SessionHub` owns independently closable Agent runtimes, qualified Session identities, adapters, generation/revision fences, and process crash propagation.
-- `ProcessManager` supervises child processes and emits status/log events.
-- `AcpClientAdapter` maps ACP SDK requests and notifications onto session operations.
-- `StorageManager` persists agent configurations and input prompt history. Session transcripts and deleted-session IDs are no longer persisted or restored locally.
+- Core dependencies point toward ports; VS Code APIs are isolated within outer adapters.
 
 ## stack
 
@@ -43,6 +51,7 @@
 - ESLint 9 with TypeScript ESLint; Prettier 3 is the formatter.
 - Preact renders the webview UI. Assistant Markdown uses markdown-it with task lists and TeX math plugins, highlight.js for language-aware code, KaTeX for formulas, and Mermaid for diagrams.
 - KaTeX CSS and font assets are bundled into `dist/webview.css` and `dist/fonts/`; Markdown/code/math rendering requires no CDN.
+- `fflate` performs client-side raw DEFLATE compression for PlantUML diagram URL encoding.
 
 ## entry
 
@@ -136,7 +145,7 @@
 
 ## convention
 
-- Run `npm test` for Vitest tests, `npm run build` for typecheck and bundling, `npm run lint` for ESLint, and `npm run format` for Prettier.
+- Run `npm test` for Vitest tests (covering core domain logic, VS Code IPC bridge handlers, Webview Preact components, and integration suites), `npm run build` for typecheck and bundling, `npm run lint` for ESLint, and `npm run format` for Prettier.
 - ESLint checks both `.ts` and `.tsx` files under `src/` and `test/`. Tooling regressions verify TSX parsing and active TypeScript rules.
 - Source and tests use TypeScript; public boundaries use explicit interfaces and type imports.
 - Domain failures use `ProcessError`, `ProtocolError`, `SessionError`, or `StorageError` where applicable.
