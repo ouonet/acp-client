@@ -1,4 +1,4 @@
-.PHONY: all build watch build-prod test lint format clean install link-vscode unlink-vscode link-cursor unlink-cursor
+.PHONY: all build watch build-prod test lint format clean install link-vscode unlink-vscode link-cursor unlink-cursor link-antigravity-ide unlink-antigravity-ide
 
 all: build
 
@@ -53,6 +53,19 @@ unlink-cursor:
 	@rm -rf ~/.cursor/extensions/undefined_publisher.acp-client-* ~/.cursor/extensions/*.acp-client-* ~/.cursor/extensions/acp-client
 	@echo "Unlinked acp-client from ~/.cursor/extensions"
 	@echo "⚠️  Important: In Cursor, run 'Developer: Reload Window' (Cmd+Shift+P) or restart Cursor."
+
+link-antigravity-ide: build-prod
+	mkdir -p ~/.antigravity-ide/extensions
+	@rm -rf ~/.antigravity-ide/extensions/undefined_publisher.acp-client-* ~/.antigravity-ide/extensions/*.acp-client-* ~/.antigravity-ide/extensions/acp-client
+	ln -sfn $(CURDIR) ~/.antigravity-ide/extensions/$(EXT_TARGET)
+	ln -sfn $(CURDIR) ~/.antigravity-ide/extensions/acp-client
+	@echo "Linked to ~/.antigravity-ide/extensions/$(EXT_TARGET)"
+	@echo "⚠️  Important: In Antigravity IDE, run 'Developer: Reload Window' (Cmd+Shift+P) or restart Antigravity IDE to activate!"
+
+unlink-antigravity-ide:
+	@rm -rf ~/.antigravity-ide/extensions/undefined_publisher.acp-client-* ~/.antigravity-ide/extensions/*.acp-client-* ~/.antigravity-ide/extensions/acp-client
+	@echo "Unlinked acp-client from ~/.antigravity-ide/extensions"
+	@echo "⚠️  Important: In Antigravity IDE, run 'Developer: Reload Window' (Cmd+Shift+P) or restart Antigravity IDE."
 
 clean:
 	rm -rf dist out node_modules
