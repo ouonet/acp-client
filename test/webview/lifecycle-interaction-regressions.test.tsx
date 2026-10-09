@@ -210,8 +210,8 @@ it("hides overflow when multiple connected Agents fit", async () => {
     expect(root.querySelectorAll('[role="tab"]')).toHaveLength(2);
     expect(
       root
-        .querySelector('[aria-selected="true"]')
-        ?.getAttribute("data-measure-agent"),
+        .querySelector('[role="tab"][aria-selected="true"]')
+        ?.getAttribute("data-agent-id"),
     ).toBe("a");
     expect(
       root.querySelector('[aria-label="Connection information for a"]'),
@@ -435,9 +435,11 @@ it("moves between strip tabs and stops at the ends", async () => {
   const restore = installTabMetrics(100, 40);
   try {
     await mount(<HeaderBar />);
-    const first = root.querySelector('[data-measure-agent="a"]') as HTMLElement;
+    const first = root.querySelector(
+      '[role="tab"][data-agent-id="a"]',
+    ) as HTMLElement;
     const second = root.querySelector(
-      '[data-measure-agent="b"]',
+      '[role="tab"][data-agent-id="b"]',
     ) as HTMLElement;
     first.focus();
     await act(() => {
@@ -532,7 +534,7 @@ it("selects the focused strip tab with Enter", async () => {
   try {
     await mount(<HeaderBar />);
     const second = root.querySelector(
-      '[data-measure-agent="b"]',
+      '[role="tab"][data-agent-id="b"]',
     ) as HTMLElement;
     second.focus();
     await act(() => {
@@ -559,7 +561,9 @@ it("moves focus to the overflow summary when the focused tab leaves the strip", 
   const restore = installTabMetrics(100, tabWidth("b", 40));
   try {
     await mount(<HeaderBar />);
-    (root.querySelector('[data-measure-agent="b"]') as HTMLElement).focus();
+    (
+      root.querySelector('[role="tab"][data-agent-id="b"]') as HTMLElement
+    ).focus();
     restore.box.clientWidth = 60;
     await act(() =>
       store.dispatch({
@@ -578,6 +582,23 @@ it("moves focus to the overflow summary when the focused tab leaves the strip", 
   }
 });
 
+it("folds squeezed strip tabs into the menu using measurer widths", async () => {
+  store.dispatch({
+    type: "APPLY_SNAPSHOT",
+    payload: { ...snapshot, connections: [connection("a"), connection("b")] },
+  });
+  const restore = installTabMetrics(50, (element) =>
+    element.closest(".agent-tab-measure") ? 80 : 20,
+  );
+  try {
+    await mount(<HeaderBar />);
+    expect(root.querySelector(".agent-overflow")).not.toBeNull();
+    expect(root.querySelectorAll('[role="tab"]')).toHaveLength(0);
+  } finally {
+    restore();
+  }
+});
+
 it("styles strip tabs with editor-tab chrome", () => {
   const css = readFileSync("src/webview/styles/lifecycle.css", "utf8");
   for (const token of [
@@ -588,6 +609,7 @@ it("styles strip tabs with editor-tab chrome", () => {
     "--vscode-tab-activeBorderTop",
     "--vscode-tab-hoverBackground",
     "--vscode-tab-hoverForeground",
+    "--vscode-editorGroupHeader-tabsBackground",
     "border-radius: 0",
     "padding-inline-end: 22px",
     "position: absolute",
@@ -597,6 +619,12 @@ it("styles strip tabs with editor-tab chrome", () => {
     ".agent-tab:focus-within",
   ])
     expect(css).toContain(token);
+  const strip = css.slice(
+    css.indexOf(".agent-tabs {"),
+    css.indexOf("}", css.indexOf(".agent-tabs {")),
+  );
+  expect(strip).toContain("overflow: hidden");
+  expect(strip).not.toContain("auto");
 });
 
 it("dismisses header menus on selection, Escape and outside interaction", async () => {

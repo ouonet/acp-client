@@ -49,7 +49,7 @@ function ConnectionTab({
   return (
     <div
       className="agent-tab"
-      data-measure-agent={agentId}
+      data-measure-agent={interactive ? undefined : agentId}
       data-agent-id={agentId}
       role={interactive ? "tab" : undefined}
       aria-selected={interactive ? selected : undefined}
@@ -136,7 +136,9 @@ export function HeaderBar() {
     if (!el) return;
     const measure = () => {
       const nodes = Array.from(
-        el.querySelectorAll<HTMLElement>("[data-measure-agent]"),
+        el.querySelectorAll<HTMLElement>(
+          ".agent-tab-measure [data-measure-agent]",
+        ),
       );
       const widths = connections.map(
         (connection) =>
@@ -193,7 +195,7 @@ export function HeaderBar() {
     if (
       active instanceof HTMLElement &&
       active.isConnected &&
-      active.closest(`[role="tab"][data-measure-agent="${id}"]`)
+      active.closest(`[role="tab"][data-agent-id="${id}"]`)
     )
       return;
     summary.current?.focus();
@@ -312,7 +314,7 @@ export function HeaderBar() {
               </details>
             )}
             <div className="agent-tab-measure" aria-hidden="true">
-              {overflow.map((connection) => tab(connection, false))}
+              {connections.map((connection) => tab(connection, false))}
             </div>
           </div>
           <details className="header-menu connect-menu">

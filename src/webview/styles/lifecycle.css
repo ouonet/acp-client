@@ -83,6 +83,7 @@
     --vscode-tab-activeBorderTop,
     var(--vscode-focusBorder)
   );
+  z-index: 1;
 }
 .agent-tab:hover:not([aria-selected="true"]) {
   background: var(--vscode-tab-hoverBackground);
@@ -116,13 +117,19 @@
 .agent-tabs {
   display: flex;
   flex: 1;
+  align-items: stretch;
   gap: 4px;
   overflow: hidden;
   min-width: 0;
+  background: var(--vscode-editorGroupHeader-tabsBackground, transparent);
 }
 .agent-tab-measure {
   position: absolute;
+  top: 0;
+  left: 0;
   width: max-content;
+  height: 0;
+  overflow: hidden;
   visibility: hidden;
   pointer-events: none;
 }

@@ -4,7 +4,7 @@
 
 contract: A measured connection has one interactive surface. It is a strip tab or an overflow menu row. The off-flow measurer is not a second surface.
 
-contract: A strip tab uses VS Code editor-tab chrome on the tab only. `.agent-header` background stays as it is. The tab sets `border-radius: 0`, a `1px` top border, `--vscode-tab-inactiveBackground`, and `--vscode-tab-inactiveForeground`. The selected tab uses `--vscode-tab-activeBackground`, `--vscode-tab-activeForeground`, and `border-top-color: var(--vscode-tab-activeBorderTop, var(--vscode-focusBorder))`. Hover on an unselected tab uses `--vscode-tab-hoverBackground` and `--vscode-tab-hoverForeground`.
+contract: A strip tab uses VS Code editor-tab chrome on the tab only. `.agent-header` background stays as it is. The strip background is `--vscode-editorGroupHeader-tabsBackground`. The tab sets `border-radius: 0`, a `1px` top border, `--vscode-tab-inactiveBackground`, and `--vscode-tab-inactiveForeground`. The selected tab uses `--vscode-tab-activeBackground`, `--vscode-tab-activeForeground`, and `border-top-color: var(--vscode-tab-activeBorderTop, var(--vscode-focusBorder))`. Hover on an unselected tab uses `--vscode-tab-hoverBackground` and `--vscode-tab-hoverForeground`.
 
 contract: The strip disconnect control is inside `[role="tab"]`, at the inline end. The tab always reserves it with `padding-inline-end: 22px`. The control is `position: absolute` and `16px` square, so showing it does not change the tab width. `.agent-tab .agent-tab-close` is `opacity: 0` and `pointer-events: none`. `.agent-tab:hover` and `.agent-tab:focus-within` reveal it. Menu disconnect controls stay visible and do not use those rules.
 
@@ -12,7 +12,7 @@ contract: `packAgentTabs(widths: readonly number[], containerWidth: number, menu
 
 contract: The component calls the packer only when `containerWidth > 0` and every width is `> 0`. Otherwise it renders every connection as a strip tab and omits the menu. A measured pack whose prefix is empty renders no strip tab, lists every connection in the menu, and still shows the menu control.
 
-contract: The budget element wraps the tablist and `.agent-overflow`. Its `clientWidth` is `containerWidth`. `gap` is `4`. `menuWidth` is `32` (`28px` control plus the `4px` gap in front of it). Each width is the `offsetWidth` of `[data-measure-agent="<id>"]` and includes the reserved close slot, status dot, label, and badge. The strip tab is that node. An overflowed connection keeps the node off-flow (`position: absolute`, not `display: none`, `aria-hidden="true"`, no `role="tab"`).
+contract: The budget element wraps the tablist and `.agent-overflow`. Its `clientWidth` is `containerWidth`. `gap` is `4`. `menuWidth` is `32` (`28px` control plus the `4px` gap in front of it). Each width is the `offsetWidth` of the off-flow copy `[data-measure-agent="<id>"]` inside `.agent-tab-measure`, and includes the reserved close slot, status dot, label, and badge. Every connection has that copy (`position: absolute`, not `display: none`, `aria-hidden="true"`, no `role="tab"`). The strip tab is not the measure node. `.agent-tabs` is `overflow: hidden` and does not scroll.
 
 contract: Packing does not move the selected agent. Connection order stays stable. A selected strip tab has `aria-selected="true"` and is absent from the menu. When the selected agent is in the menu, that row has `aria-selected="true"` and every strip tab has `aria-selected="false"`.
 
@@ -40,7 +40,7 @@ test: The disconnect control is inside `[role="tab"]`. Activating it sends `DISC
 
 test: Dropping the focused tab from the strip moves `document.activeElement` to the overflow summary.
 
-test: `lifecycle.css` contains the inactive, active, hover, and top-border tokens above, `border-radius: 0`, `padding-inline-end: 22px`, and the close control's absolute box plus the hover and focus-within reveal.
+test: `lifecycle.css` contains the inactive, active, hover, top-border, and tab-strip tokens above, `border-radius: 0`, `padding-inline-end: 22px`, `.agent-tabs` `overflow: hidden`, and the close control's absolute box plus the hover and focus-within reveal. Header tests that squeeze the strip tab still fold from the measurer width.
 
 convention: Preact function components and TypeScript. The packer is pure: no DOM and no `vscode` import. Actions stay `SELECT_AGENT` and `DISCONNECT_AGENT`. Tab chrome stays in `lifecycle.css` and uses VS Code theme tokens. Tests use Vitest and happy-dom. Checks are `npm test`, `npm run lint`, and `npm run build`.
 
