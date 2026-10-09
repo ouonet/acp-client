@@ -108,7 +108,7 @@
 - Opening remote history loads the existing Session ID. Subsequent prompts continue that Session; history transcripts do not become composer drafts.
 - Remote history has no standard running/idle field. Only this client's attached current Session may be annotated with its in-memory status.
 - Deletion requires advertised Agent delete support; failure retains the current runtime. No local tombstones or transcript files are written.
-- Agent tabs select independent connections. The overflow menu appears only when more than one connected Agent does not fit, with one select entry per Agent. The second row manages that Agent's current Session and opens its connection information. Multi-live-Session tabs and concurrency configuration are deferred.
+- Agent connection tabs and their overflow menu are specified in [Agent and Session lifecycle](specs/agent-session-lifecycle.md).
 - After a snapshot, a transition to zero Agent configurations opens the configuration drawer and closes history. Dismissing it leaves it closed until a configuration exists and is later removed.
 - An uninitialized selected Agent offers connect. An initialized selected Agent with no current Session starts one Session for that generation in this mount.
 - The automatic Session waits while any lifecycle request is pending. It does not repeat a generation already started or bound to its Session.

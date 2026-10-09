@@ -10,8 +10,23 @@
 
 ## Navigation
 
-- The first row exposes connection tabs, connect and configuration entries. Overflow selection appears only when more than one connected Agent does not fit, with one select entry per connected Agent.
-- Each connection tab has its own close control.
+- The first row shows connection tabs, connect, and Agent Settings.
+- A connection tab uses square editor-tab chrome and VS Code tab colors.
+- The strip background is `--vscode-editorGroupHeader-tabsBackground`. The header background stays unchanged.
+- The selected tab uses the active background, foreground, and top border.
+- The top border uses `tab.activeBorderTop`, then the focus border.
+- Disconnect sits inside the tab and appears on hover or keyboard focus.
+- The close slot stays reserved, so revealing it does not resize the tab.
+- `packAgentTabs` keeps a fitting prefix on the strip and folds the suffix into the menu.
+- Widths come from off-flow copies. The strip does not scroll.
+- Unmeasured layout shows every tab and hides the menu.
+- A budget that fits no tab leaves the strip empty and lists every connection.
+- Selection stays in connection order. The selected agent is not pulled onto the strip.
+- A menu row selects with the name and status, and disconnects with a visible button.
+- Arrow keys move among strip tabs and stop at the ends.
+- Home and End select the first and last strip tabs.
+- Focus moves to the overflow summary when the focused tab leaves the strip.
+- Config-panel tabs, connection information, the connect menu, and Agent Settings stay unchanged.
 - Connection information shows reported identity, version, protocol and Session/prompt/MCP capabilities.
 - The second row exposes the selected Agent's current Session, status, one read-only connection-information control for that Agent, new, history and close controls.
 - Busy current Sessions cannot be replaced by new, load or fork operations.
