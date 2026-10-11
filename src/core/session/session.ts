@@ -623,6 +623,11 @@ export class Session implements ISession {
   }
 
   private setStatus(newStatus: SessionStatus): void {
+    // A permission request is valid only while the session is waiting for approval.
+    // Settle it before publishing any transition out of that state.
+    if (newStatus !== "waiting_approval" && this.approval) {
+      this.settleApproval();
+    }
     this.status = newStatus;
     this.emitEvent({
       type: "status_change",

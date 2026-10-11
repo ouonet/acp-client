@@ -173,7 +173,7 @@ export class ProcessManager implements IProcessPort {
           env,
           cwd: effectiveCwd,
           stdio: ["pipe", "pipe", "pipe"],
-          shell: isWindows,
+          shell: isWindows && /\.(cmd|bat)$/i.test(config.command),
         });
       } catch (err: any) {
         this.log(config.id, `Failed to spawn: ${err?.message}`, "system");

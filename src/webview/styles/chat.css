@@ -28,12 +28,12 @@
   background: rgba(0, 127, 212, 0.18);
   background: color-mix(
     in srgb,
-    var(--vscode-editor-background, #1e1e1e) 84%,
+    var(--bg-primary, #1e1e1e) 84%,
     var(--vscode-focusBorder, #007fd4) 16%
   );
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--vscode-focusBorder, #007fd4) 35%, transparent);
-  color: var(--vscode-editor-foreground);
+  color: var(--fg-primary);
   border: none;
   border-radius: var(--radius-md);
   padding: 10px 14px;
@@ -102,7 +102,7 @@
   letter-spacing: 0.5px;
 }
 .role-badge.user-badge {
-  color: var(--vscode-editor-foreground);
+  color: var(--fg-primary);
 }
 .role-badge.assistant-badge {
   color: var(--vscode-textLink-foreground, var(--accent-color));
@@ -129,7 +129,7 @@
 }
 .message-row.user .message-bubble {
   background: transparent;
-  color: var(--vscode-editor-foreground);
+  color: var(--fg-primary);
   padding: 0;
 }
 .assistant-content {
@@ -461,7 +461,7 @@
   border-radius: 6px;
   background: var(
     --vscode-editorWidget-background,
-    var(--vscode-editor-background, #252526)
+    var(--bg-primary, #252526)
   );
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   opacity: 0;

@@ -85,8 +85,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src test",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "package": "npm run build:prod && npx @vscode/vsce package --no-dependencies"
+    "package": "npm run build:prod && npx @vscode/vsce package --no-dependencies",
+    "link:vscode": "npm run build:prod && node scripts/link-extension.mjs link vscode",
+    "unlink:vscode": "node scripts/link-extension.mjs unlink vscode",
+    "link:cursor": "npm run build:prod && node scripts/link-extension.mjs link cursor",
+    "unlink:cursor": "node scripts/link-extension.mjs unlink cursor",
+    "link:antigravity-ide": "npm run build:prod && node scripts/link-extension.mjs link antigravity-ide",
+    "unlink:antigravity-ide": "node scripts/link-extension.mjs unlink antigravity-ide"
   },
   "dependencies": {
     "fflate": "^0.8.3",

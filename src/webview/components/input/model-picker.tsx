@@ -1,4 +1,3 @@
-import { createPortal } from "preact/compat";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import type { ThinkingLevel } from "../../../core/types/session";
 
@@ -44,15 +43,15 @@ export function ModelPicker({
 
   useEffect(() => {
     if (!open || disabled) return;
-    modelToggle.current?.focus({ preventScroll: true });
-  }, [open, disabled]);
-  useEffect(() => {
-    if (!modelsOpen || disabled) return;
-    const selectedIndex = Math.max(0, availableModels.indexOf(selectedModel ?? ""));
-    modelOptions.current
-      ?.querySelectorAll<HTMLButtonElement>("[data-model-option]")
-      [selectedIndex]?.focus({ preventScroll: true });
-  }, [modelsOpen, disabled, availableModels, selectedModel]);
+    if (modelsOpen && availableModels.length > 0) {
+      const selectedIndex = Math.max(0, availableModels.indexOf(selectedModel ?? ""));
+      modelOptions.current
+        ?.querySelectorAll<HTMLButtonElement>("[data-model]")
+        [selectedIndex]?.focus({ preventScroll: true });
+    } else {
+      modelToggle.current?.focus({ preventScroll: true });
+    }
+  }, [open, modelsOpen, disabled, availableModels, selectedModel]);
   useLayoutEffect(() => {
     if (!open) return;
     const positionPanel = () => {
@@ -166,8 +165,8 @@ export function ModelPicker({
         title="Select model and thinking level"
         disabled={disabled}
         onClick={() => {
-          setModelsOpen(false);
           setOpen(!open);
+          setModelsOpen(true);
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape" && open) {
@@ -177,7 +176,7 @@ export function ModelPicker({
           if (event.key === "ArrowDown" || event.key === "Enter") {
             event.preventDefault();
             setOpen(true);
-            setModelsOpen(false);
+            setModelsOpen(true);
           }
         }}
       >
@@ -185,13 +184,12 @@ export function ModelPicker({
           (availableModels.length ? "Select model" : "Model unavailable")}
         <span aria-hidden="true">⌄</span>
       </button>
-      {open &&
-        createPortal(
+      {open && !disabled && (
           <section
             ref={panel}
             role="dialog"
             aria-label="Model and thinking level"
-            className="model-picker-panel"
+            className="model-picker-panel model-picker-menu"
             style={{
               position: "fixed",
               left: panelPosition.left,
@@ -259,6 +257,7 @@ export function ModelPicker({
                       aria-checked={model === selectedModel}
                       disabled={disabled}
                       key={model}
+                      data-model={model}
                       data-model-option={model}
                       className={model === selectedModel ? "active" : ""}
                       onKeyDown={(event) => {
@@ -334,6 +333,7 @@ export function ModelPicker({
                     aria-label={level}
                     tabIndex={index === levelFocusIndex ? 0 : -1}
                     key={level}
+                    data-level={level}
                     data-thinking-level={level}
                     className={level === thinkingLevel ? "active" : ""}
                     title={level}
@@ -352,8 +352,7 @@ export function ModelPicker({
               </div>
             )}
           </div>
-          </section>,
-          document.body,
+          </section>
         )}
     </div>
   );

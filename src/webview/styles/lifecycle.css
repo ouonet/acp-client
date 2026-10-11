@@ -194,7 +194,7 @@
   max-width: calc(100vw - 24px);
   max-height: 50vh;
   overflow: auto;
-  background: var(--vscode-menu-background, var(--vscode-editor-background));
+  background: var(--vscode-menu-background, var(--bg-primary));
   padding: 5px;
   border: 1px solid var(--vscode-panel-border);
   box-shadow: 0 4px 12px #0004;
@@ -299,7 +299,7 @@
   padding: 12px;
   gap: 8px;
   border-top: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-editor-background);
+  background: var(--bg-primary);
 }
 .lifecycle-config .btn-primary {
   background: var(--vscode-button-background);

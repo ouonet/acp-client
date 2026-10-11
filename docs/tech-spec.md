@@ -74,6 +74,7 @@
 - Process status values are `stopped`, `starting`, `running`, `restarting`, and `error`.
 - `isWebviewAction` validates known action types and checks payloads for prompts, connection, permissions, and file application.
 - Webview state includes runtime pending approval snapshots; session and process changes use typed events.
+- The chat Webview is hosted in the Activity Bar and uses `sideBar.background` / `sideBar.foreground` as its base colors, falling back to editor colors for hosts that do not expose sidebar theme tokens; local surfaces use those semantic base tokens instead of assuming the editor surface.
 - Assistant Markdown supports headings, nested/ordered/task lists, tables, blockquotes, links, images, inline/fenced code, and inline/display math using `$...$`, `$$...$$`, `\\(...\\)`, or `\\[...\\]`. Unclosed streaming fences remain readable; unknown code languages fall back to escaped text.
 - Markdown preserves code indentation and blank lines, escapes raw HTML, rejects executable link schemes, and renders KaTeX with trust disabled. Wide tables, code, and display formulas scroll inside the message.
 - File links use `OPEN_FILE` actions with line metadata. The VS Code bridge opens resources with `vscode.open`, allowing the configured editor/viewer to handle images and other binary files; text line ranges are passed as editor selection options.

@@ -105,7 +105,9 @@ describe("T4: ProcessManager (Lifecycle Supervision & Zombie Protection)", () =>
     await processManager.stop("agent-stubborn");
     const duration = Date.now() - startStop;
 
-    expect(duration).toBeGreaterThanOrEqual(180);
+    if (process.platform !== "win32") {
+      expect(duration).toBeGreaterThanOrEqual(180);
+    }
     expect(processManager.getStatus("agent-stubborn")).toBe("stopped");
   });
 

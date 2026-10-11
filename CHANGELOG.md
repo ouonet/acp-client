@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Cross-platform extension directory linking and cleaning script supporting Windows, macOS, and Linux for VS Code, Cursor, and Antigravity IDE.
 - One model and thinking menu. It sends `SET_CONFIG_OPTION` for the Agent's model or thinking option and changes the selection only after confirmation.
 - Independent Agent connection tabs, overflow selection, per-Agent current Session controls, and read-only connection capability information.
 - Complete Agent configuration editing with quoted arguments, environment variables, working-directory picking, correlated saves, and cancellable isolated connection tests.
 - Agent-owned paginated session history; local chat transcript persistence and restoration are removed.
 
 ### Fixed
+
+- Settle pending permission requests automatically when transitioning out of `waiting_approval` status in session state machine.
+- Use sidebar theme tokens (`sideBar.background` / `sideBar.foreground`) for the Activity Bar Webview with editor fallbacks instead of assuming the editor canvas.
+- Avoid invoking Windows `cmd.exe` shell for direct binary executions in `ProcessManager` to prevent argument mangling and false spawn resolutions.
 
 - Fork any completed response through session/fork with `_meta.upToMessageIndex`. Rewind the current Session through `_aharness/session/rewind` without creating a Session.
 - Open Agent creation when none are configured, offer connect when none are initialized, start one Session after connect, and hide the composer when no Session exists.

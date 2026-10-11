@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import * as vscode from "vscode";
+import * as path from "path";
 import { AcpViewProvider } from "../../src/vscode/acp-view-provider";
 import type { ISessionHub, ISession } from "../../src/core/session/session-hub";
 import type {
@@ -771,7 +772,7 @@ describe("T2: AcpViewProvider & Unidirectional IPC Bridge", () => {
       await mockWebview.fireMessage({ type: "OPEN_FILE", payload: { filePath } });
       expect(openResource).toHaveBeenCalledWith(
         "vscode.open",
-        expect.objectContaining({ fsPath: `/mock/workspace/${filePath}` }),
+        expect.objectContaining({ fsPath: path.join("/mock/workspace", filePath) }),
         {},
       );
       expect(openText).not.toHaveBeenCalled();
@@ -793,12 +794,9 @@ describe("T2: AcpViewProvider & Unidirectional IPC Bridge", () => {
 
     expect(openResource).toHaveBeenCalledWith(
       "vscode.open",
-      expect.objectContaining({ fsPath: "/mock/workspace/src/index.ts" }),
+      expect.objectContaining({ fsPath: path.join("/mock/workspace/src/index.ts") }),
       expect.objectContaining({
-        selection: expect.objectContaining({
-          start: { line: 14, character: 0 },
-          end: { line: 29, character: 0 },
-        }),
+        selection: new vscode.Range(14, 0, 29, 0),
       }),
     );
   });

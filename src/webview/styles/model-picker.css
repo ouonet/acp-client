@@ -26,7 +26,7 @@
   padding: 8px 11px 9px;
   border: 1px solid var(--vscode-widget-border);
   border-radius: 12px;
-  background: var(--vscode-menu-background, var(--vscode-editor-background));
+  background: var(--vscode-menu-background, var(--bg-primary));
   color: var(--vscode-menu-foreground, var(--vscode-foreground));
   box-shadow: 0 5px 18px var(--vscode-widget-shadow, #0004);
   isolation: isolate;
@@ -94,7 +94,7 @@
   padding: 4px;
   border: 1px solid var(--vscode-widget-border);
   border-radius: 8px;
-  background: var(--vscode-menu-background, var(--vscode-editor-background));
+  background: var(--vscode-menu-background, var(--bg-primary));
   box-shadow: 0 4px 16px var(--vscode-widget-shadow, #0004);
   z-index: 5;
 }
@@ -202,7 +202,7 @@
 .model-picker-level-track button.active span {
   width: 22px;
   height: 22px;
-  background: var(--vscode-editor-background, #fff);
+  background: var(--bg-primary, #fff);
   box-shadow: 0 1px 3px var(--vscode-widget-shadow, #0004);
 }
 .model-picker-level-track button:focus-visible {
