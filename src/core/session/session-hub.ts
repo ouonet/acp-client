@@ -17,6 +17,7 @@ import {
   guarded,
   serial,
   deadline,
+  LONG_OPERATION_MS,
   releaseCurrent,
   assertReplaceable,
   type AgentRuntime,
@@ -167,8 +168,11 @@ export class SessionHub implements ISessionHub {
       },
       () => {},
     );
-    current.connection = guarded(current, factory, () =>
-      this.valid(current, generation),
+    current.connection = guarded(
+      current,
+      factory,
+      () => this.valid(current, generation),
+      LONG_OPERATION_MS,
     )
       .then(async (adapter) => {
         current.adapter = adapter;
@@ -309,7 +313,10 @@ export class SessionHub implements ISessionHub {
     entry.session?.dispose();
     entry.session = session;
     entry.staging = undefined;
-    session.onEvent(() => this.notify(false));
+    session.onEvent((event) => {
+      if (event.type === "chunk" || event.type === "thinking" || event.type === "tool_call" || event.type === "tool_result" || event.type === "compaction_chunk") return;
+      this.notify(false);
+    });
     this.notify();
     return session;
   }
@@ -387,6 +394,7 @@ export class SessionHub implements ISessionHub {
         entry,
         entry.adapter!.loadSession(sessionId, targetCwd, []),
         () => this.valid(entry, generation) && entry.revision === revision,
+        LONG_OPERATION_MS,
       );
       Object.assign(staging, {
         model: result.currentModel,
@@ -552,8 +560,28 @@ export class SessionHub implements ISessionHub {
     return [...this.entries.values()].flatMap((entry) => {
       const session = entry.session;
       if (!session) return [];
-      const { messages, ...data } = session.serialize();
-      return [{ ...data, messageCount: messages.length }];
+      return [{
+        id: session.id,
+        agentId: session.agentId,
+        runtimeRevision: session.runtimeRevision,
+        attached: session.attached,
+        title: session.title,
+        cwd: session.cwd,
+        model: session.model,
+        thinkingLevel: session.thinkingLevel,
+        modelConfigId: session.modelConfigId,
+        thinkingConfigId: session.thinkingConfigId,
+        availableModels: session.availableModels,
+        availableThinkingLevels: session.availableThinkingLevels,
+        availableCommands: session.availableCommands,
+        capabilities: session.capabilities,
+        modes: session.modes,
+        createdAt: session.createdAt,
+        updatedAt: session.updatedAt,
+        status: session.status,
+        messageCount: session.messages.length,
+        parentSessionId: session.parentSessionId,
+      }];
     });
   }
   public async closeSession(sessionId: string, agentId?: string) {

@@ -34,12 +34,8 @@ async function build() {
 
   // 2. Build Webview SPA Client Bundle
   console.log('[build] Bundling Webview Cockpit SPA (dist/webview.js)...');
-  const webviewEntry = (await fs.stat('src/webview/main.tsx').catch(() => null))
-    ? 'src/webview/main.tsx'
-    : 'src/webview/main.ts';
-
   const webviewCtx = await esbuild.context({
-    entryPoints: [webviewEntry],
+    entryPoints: ['src/webview/main.tsx'],
     bundle: true,
     platform: 'browser',
     target: 'es2022',
@@ -59,19 +55,14 @@ async function build() {
   // 3. Copy/Bundle CSS and HTML assets
   const copyAssets = async () => {
     try {
-      const hasModularCss = await fs.stat('src/webview/styles/index.css').catch(() => null);
-      if (hasModularCss) {
-        await esbuild.build({
-          entryPoints: ['src/webview/styles/index.css'],
-          bundle: true,
-          outfile: 'dist/webview.css',
-          loader: { '.woff2': 'file', '.woff': 'file', '.ttf': 'file' },
-          assetNames: 'fonts/[name]-[hash]',
-          minify: isProduction,
-        });
-      } else {
-        await fs.copyFile('src/webview/style.css', 'dist/webview.css');
-      }
+      await esbuild.build({
+        entryPoints: ['src/webview/styles/index.css'],
+        bundle: true,
+        outfile: 'dist/webview.css',
+        loader: { '.woff2': 'file', '.woff': 'file', '.ttf': 'file' },
+        assetNames: 'fonts/[name]-[hash]',
+        minify: isProduction,
+      });
       try {
         await fs.copyFile('src/webview/index.html', 'dist/index.html');
       } catch {
@@ -89,7 +80,6 @@ async function build() {
     console.log('[build] Watching for file changes...');
     try {
       const { watch } = await import('fs');
-      watch('src/webview/style.css', () => { copyAssets(); });
       try {
         watch('src/webview/styles', { recursive: true }, () => { copyAssets(); });
       } catch {}

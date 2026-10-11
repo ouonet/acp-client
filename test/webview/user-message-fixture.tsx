@@ -42,7 +42,7 @@ export function messageFixture(overrides: Partial<SessionData> = {}) {
       },
     ],
     connections: [
-      { agentId: "a", status: "running", initialized: true, generation: 3 },
+      { agentId: "a", status: "running", initialized: true, generation: 3, agentInfo: { name: "aharness" } },
     ],
     sessions: [],
     inputHistory: [],

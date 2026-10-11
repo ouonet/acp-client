@@ -1,7 +1,7 @@
 # Conversation message actions
 
 - User cards use an accent-tinted background and subtle inset outline that remain distinct in light and dark themes.
-- Copy and Rewind / Undo float in one horizontal row at the card's right vertical midpoint, visible only during mouse hover. The toolbar overlays content without reserved padding, minimum card height or changes to text wrapping; leaving hides it even if focus remains.
+- Copy floats in one horizontal row at the card's right vertical midpoint, visible only during mouse hover. Rewind / Undo is in that row only when the connected agent reports the name `aharness`. The toolbar overlays content without reserved padding, minimum card height or changes to text wrapping; leaving hides it even if focus remains.
 - Copy preserves the original prompt text and line breaks.
 - Agent/model/timestamp metadata and Copy all share a footer after the full assistant response and execution content. Copy and Fork sit together in the footer action group; the row wraps on narrow screens.
 - A same-Agent Fork at the final response uses native ACP session/fork when advertised, even with an explicit message boundary. Earlier boundaries retain the isolated new-Session/context fallback.

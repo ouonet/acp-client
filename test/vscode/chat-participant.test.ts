@@ -18,7 +18,7 @@ describe("T5: VS Code Native Chat Participant (@acp)", () => {
           listener({
             type: "chunk",
             sessionId: "session-123",
-            payload: { content: { text: `Echo: ${text}` } },
+            payload: { content: `Echo: ${text}`, text: `Echo: ${text}` },
           });
         }
       }),
@@ -35,6 +35,7 @@ describe("T5: VS Code Native Chat Participant (@acp)", () => {
 
     mockSessionHub = {
       getActiveSession: vi.fn().mockReturnValue(mockSession),
+      getActiveAgentId: vi.fn().mockReturnValue("active-agent"),
       createSession: vi.fn().mockResolvedValue(mockSession),
       forkSession: vi.fn().mockResolvedValue({ id: "forked-session-456" }),
     };
@@ -42,7 +43,7 @@ describe("T5: VS Code Native Chat Participant (@acp)", () => {
     mockStorageManager = {
       getAgentConfigs: vi
         .fn()
-        .mockResolvedValue([{ id: "default-agent", name: "Default Agent" }]),
+        .mockResolvedValue([{ id: "default-agent", name: "Default Agent" }, { id: "active-agent", name: "Active" }]),
     };
   });
 
@@ -106,7 +107,7 @@ describe("T5: VS Code Native Chat Participant (@acp)", () => {
     );
 
     expect(mockSessionHub.createSession).toHaveBeenCalledWith(
-      "default-agent",
+      "active-agent",
       "Chat Session",
     );
     expect(mockStream.markdown).toHaveBeenCalledWith(

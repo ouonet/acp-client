@@ -78,6 +78,22 @@ export class VsCodeWorkspaceAdapter implements IWorkspacePort {
     );
   }
 
+  public async listDirectory(dirPath: string): Promise<string[]> {
+    const entries = await vscode.workspace.fs.readDirectory(vscode.Uri.file(dirPath));
+    return entries
+      .filter(([, type]) => type === vscode.FileType.Directory)
+      .map(([name]) => name);
+  }
+
+  public async fileExists(filePath: string): Promise<boolean> {
+    try {
+      await vscode.workspace.fs.stat(vscode.Uri.file(filePath));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   public async executeCommand(
     command: string,
     cwd?: string,

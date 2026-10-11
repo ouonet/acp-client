@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs";
+import { createHash } from "node:crypto";
 import type { BridgeContext } from "./types";
 
 export class WorkspaceHandler {
@@ -37,7 +38,8 @@ export class WorkspaceHandler {
 
   public async handleOpenDiffEditor(payload: { filePath: string; originalContent: string; modifiedContent: string }): Promise<void> {
     const { filePath, originalContent, modifiedContent } = payload;
-    const tmpDir = path.join(os.tmpdir(), "acp-diff");
+    const key = createHash("sha1").update(filePath).digest("hex").slice(0, 16);
+    const tmpDir = path.join(os.tmpdir(), "acp-diff", key);
     await fs.promises.mkdir(tmpDir, { recursive: true });
     const ext = path.extname(filePath);
     const base = path.basename(filePath, ext);
@@ -57,24 +59,15 @@ export class WorkspaceHandler {
     const workspaceFolders = vscode.workspace?.workspaceFolders;
     const root = workspaceFolders && workspaceFolders.length > 0 ? workspaceFolders[0].uri.fsPath : process.cwd();
 
-    let targetUri: vscode.Uri | undefined;
     const directPath = path.isAbsolute(filePath) ? filePath : path.join(root, filePath);
-    const directUri = vscode.Uri.file(directPath);
+    const targetUri = vscode.Uri.file(directPath);
 
     try {
-      await vscode.workspace.fs.stat(directUri);
-      targetUri = directUri;
+      await vscode.workspace.fs.stat(targetUri);
     } catch {
-      try {
-        const basename = path.basename(filePath);
-        const matches = await vscode.workspace.findFiles(`**/${basename}`);
-        if (matches && matches.length > 0) {
-          targetUri = matches.find((m) => m.fsPath.endsWith(filePath)) || matches[0];
-        }
-      } catch {}
+      vscode.window.showWarningMessage(`File not found: ${filePath}`);
+      return;
     }
-
-    if (!targetUri) targetUri = directUri;
 
     // Let VS Code select the native editor for text, images and binary resources.
     const options: vscode.TextDocumentShowOptions = {};

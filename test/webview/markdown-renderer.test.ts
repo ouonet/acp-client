@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderMarkdown } from "../../src/webview/components/chat-view";
+import { renderMarkdown } from "../../src/webview/utils/markdown-renderer";
 
 describe("T2: Enhanced Markdown Renderer", () => {
   it("should render headers (h1, h2, h3)", () => {

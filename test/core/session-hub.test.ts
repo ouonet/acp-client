@@ -287,6 +287,27 @@ describe("T6: Multi-Session Hub & Session Forking Engine", () => {
       expect(session.status).toBe("idle");
     });
 
+    it("accepts another prompt after cancel", async () => {
+      mockAdapter.prompt
+        .mockImplementationOnce(() => new Promise(() => {}))
+        .mockResolvedValueOnce({ stopReason: "end_turn" });
+
+      const session = new Session({
+        id: "sess-1",
+        agentId: "agent-1",
+        title: "New Chat",
+        adapter: mockAdapter as any,
+      });
+
+      const first = session.prompt("Hang");
+      await session.cancel();
+      await first;
+      expect(session.status).toBe("idle");
+      await session.prompt("Next");
+      expect(session.status).toBe("idle");
+      expect(mockAdapter.prompt).toHaveBeenCalledTimes(2);
+    });
+
     it("should handle permission requests and approvals", async () => {
       let resolvePermissionResponse: any;
       mockAdapter.prompt.mockImplementationOnce(async (sessionId) => {

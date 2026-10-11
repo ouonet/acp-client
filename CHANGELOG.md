@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Adaptive bidirectional popup placement algorithm for the model picker card and options submenu, dynamically adjusting direction and max-height based on viewport clearance.
+- Refined thinking level capsule track geometry and concentric thumb handle, eliminating dual-circle offset and edge clipping.
+- Cache-busting version timestamps on webview resource URIs in Extension HTML utility to prevent stale Electron cache.
+- Complete process tree termination on agent teardown (`taskkill /T /F` on Windows, process group signal on POSIX).
+- Remove deprecated non-Preact DOM UI files and obsolete tests in favor of the production Preact SPA.
 - Settle pending permission requests automatically when transitioning out of `waiting_approval` status in session state machine.
 - Use sidebar theme tokens (`sideBar.background` / `sideBar.foreground`) for the Activity Bar Webview with editor fallbacks instead of assuming the editor canvas.
 - Avoid invoking Windows `cmd.exe` shell for direct binary executions in `ProcessManager` to prevent argument mangling and false spawn resolutions.

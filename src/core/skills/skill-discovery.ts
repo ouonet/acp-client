@@ -3,6 +3,7 @@
  * Discovers skills from workspace .agents/skills/ and .skills/ directories.
  */
 
+import * as path from "node:path";
 import type { IWorkspacePort } from "../ports";
 
 export interface SkillDefinition {
@@ -91,8 +92,8 @@ export class SkillDiscovery {
   ): Promise<SkillDefinition[]> {
     const discovered: SkillDefinition[] = [];
     const searchDirs = [
-      `${workspaceRoot}/.agents/skills`,
-      `${workspaceRoot}/.skills`,
+      path.join(workspaceRoot, ".agents", "skills"),
+      path.join(workspaceRoot, ".skills"),
     ];
 
     for (const searchDir of searchDirs) {
@@ -100,7 +101,7 @@ export class SkillDiscovery {
         if (!workspace.listDirectory) continue;
         const subdirs = await workspace.listDirectory(searchDir);
         for (const subdir of subdirs) {
-          const skillFile = `${searchDir}/${subdir}/SKILL.md`;
+          const skillFile = path.join(searchDir, subdir, "SKILL.md");
           let exists = true;
           if (workspace.fileExists) {
             exists = await workspace.fileExists(skillFile);

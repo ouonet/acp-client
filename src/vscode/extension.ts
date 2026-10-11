@@ -13,7 +13,7 @@ import { AcpClientAdapter } from "../core/protocol/acp-client-adapter";
 import { VsCodeWorkspaceAdapter } from "./ports/vscode-workspace-adapter";
 import { AcpViewProvider } from "./acp-view-provider";
 import { AcpChatParticipant } from "./chat-participant";
-import type { AgentConfig } from "../core/types/config";
+import { CLIENT_VERSION } from "../version";
 
 let processManager: ProcessManager | undefined;
 let sessionHub: SessionHub | undefined;
@@ -123,7 +123,7 @@ export async function activate(
         adapter = new AcpClientAdapter({
           input: proc.stdout,
           output: proc.stdin,
-          clientInfo: { name: "vscode-acp-client", version: "0.1.0" },
+          clientInfo: { name: "vscode-acp-client", version: CLIENT_VERSION },
           onRequestPermission: createPermissionHandler(
             () => sessionHub,
             agentId,
@@ -207,31 +207,13 @@ export async function activate(
     }),
   );
 
-  const existingConfigs = await storageManager.getAgentConfigs();
-  const configuredBefore = context.globalState.get<boolean>("acpClient.agentDefaultsInitialized", false);
-
-  // Initialize with aharness CLI (Zed-compliant ACP Agent) or migrate legacy default
-  const defaultAharnessAgent: AgentConfig = {
-    id: "aharness",
-    name: "aharness",
-    command: "uv",
-    args: [
-      "run",
-      "--directory",
-      "/Users/neo/workbench/test/ai/harness/aharness",
-      "aharness",
-      "acp",
-      "serve",
-    ],
-    env: {},
-    transport: "stdio",
-    enabled: true,
-  };
-
-  if (!configuredBefore && existingConfigs.length === 0) {
-    await storageManager.saveAgentConfigs([defaultAharnessAgent]);
+  try {
+    await storageManager.getAgentConfigs();
+  } catch (error) {
+    outputChannel.appendLine(
+      `[${new Date().toISOString()}] [ACP Client] Agent configuration could not be read: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
-  if (!configuredBefore) await context.globalState.update("acpClient.agentDefaultsInitialized", true);
 }
 
 export async function deactivate(): Promise<void> {

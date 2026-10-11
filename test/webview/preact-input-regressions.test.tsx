@@ -156,6 +156,7 @@ describe("Preact input reliability", () => {
   });
   it("sends model changes to the host configuration API", async () => {
     await act(() => (root.querySelector(".model-picker-toggle") as HTMLButtonElement).click());
+    await act(() => (root.querySelector(".model-picker-model-toggle") as HTMLButtonElement)?.click());
     await act(() => (root.querySelector('[data-model="model-b"]') as HTMLButtonElement).click());
     expect(send).toHaveBeenCalledWith({
       type: "SET_CONFIG_OPTION",

@@ -87,14 +87,14 @@ describe("agent config lifecycle", () => {
   it("times out handshakes and escalates stubborn children", async () => {
     vi.useFakeTimers(); const { handler } = fixture(); const proc = child(); proc.kill.mockImplementation((signal: string) => { if (signal === "SIGKILL") { proc.signalCode = signal; proc.emit("exit", null, signal); } return true; });
     mocks.initialize.mockReturnValue(new Promise(() => {})); const testing = handler.handleTestConnection({ config, requestId: "timeout" } as any);
-    await vi.advanceTimersByTimeAsync(10000); await vi.advanceTimersByTimeAsync(5000); await testing;
+    await vi.advanceTimersByTimeAsync(60000); await vi.advanceTimersByTimeAsync(5000); await testing;
     expect(mocks.dispose).toHaveBeenCalled(); expect(proc.kill.mock.calls).toEqual([["SIGTERM"], ["SIGKILL"]]);
   });
   it("does not acknowledge cleanup before SIGKILL exit", async () => {
     vi.useFakeTimers(); const { ctx, handler } = fixture(); const proc = child();
     proc.kill.mockImplementation((signal: string) => { if (signal === "SIGKILL") setTimeout(() => { proc.signalCode = signal; proc.emit("exit", null, signal); }, 500); return true; });
     mocks.initialize.mockReturnValue(new Promise(() => {})); const pending = handler.handleTestConnection({ config, requestId: "reap" } as any);
-    await vi.advanceTimersByTimeAsync(15000); expect(ctx.postMessage).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(65000); expect(ctx.postMessage).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(500); await pending; expect(ctx.postMessage).toHaveBeenCalled();
   });
   it("preempts bridge preflight reads when stopped", async () => {

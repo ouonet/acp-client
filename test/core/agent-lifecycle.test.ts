@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SessionHub } from '../../src/core/session/session-hub';
+import { LONG_OPERATION_MS } from '../../src/core/session/agent-runtime';
 function setup() {
  const listeners = new Set<any>();
  const adapters = new Map<string, any>();
@@ -25,7 +26,7 @@ describe('Agent runtime ownership',()=>{
    factory.mockImplementationOnce(()=>new Promise(resolve=>{finish=resolve}));
    processManager.stop.mockImplementationOnce(()=>new Promise<void>(resolve=>{reaped=resolve}));
    const connecting=hub.connectAgent('a');const rejected=expect(connecting).rejects.toThrow(/timed out/);
-   await vi.advanceTimersByTimeAsync(10000);await rejected;
+   await vi.advanceTimersByTimeAsync(LONG_OPERATION_MS);await rejected;
    expect(processManager.stop).toHaveBeenCalledWith('a');
    await expect(hub.connectAgent('a')).rejects.toThrow(/cleaning|disconnecting/);
    const close=vi.fn(async()=>{}); finish({close});await vi.advanceTimersByTimeAsync(0);

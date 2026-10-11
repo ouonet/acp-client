@@ -801,28 +801,15 @@ describe("T2: AcpViewProvider & Unidirectional IPC Bridge", () => {
     );
   });
 
-  it("should resolve partial/subpath file via workspace findFiles fuzzy search", async () => {
+  it("warns when the exact file is missing", async () => {
     provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
 
-    const fullMatchedUri = vscode.Uri.file(
-      "/mock/workspace/packages/services/src/aharness/services/workspace/service/workspace_scanner.py",
-    );
-
     const openResource = vi.spyOn(vscode.commands, "executeCommand");
-    // Make direct stat fail so it falls through to findFiles
+    const warn = vi.spyOn(vscode.window, "showWarningMessage");
     vi.spyOn(vscode.workspace.fs, "stat").mockRejectedValue(
       new Error("File not found"),
     );
-    // Make findFiles return the candidate matching basename
-    vi.spyOn(vscode.workspace, "findFiles").mockImplementation(
-      async (pattern) => {
-        const glob = typeof pattern === "string" ? pattern : pattern.pattern;
-        if (glob.includes("workspace_scanner.py")) {
-          return [fullMatchedUri];
-        }
-        return [];
-      },
-    );
+    const findFiles = vi.spyOn(vscode.workspace, "findFiles");
 
     await mockWebview.fireMessage({
       type: "OPEN_FILE",
@@ -833,15 +820,14 @@ describe("T2: AcpViewProvider & Unidirectional IPC Bridge", () => {
       },
     });
 
-    expect(openResource).toHaveBeenCalledWith(
-      "vscode.open",
-      expect.objectContaining({ fsPath: fullMatchedUri.fsPath }),
-      expect.objectContaining({
-        selection: expect.objectContaining({
-          start: { line: 9, character: 0 },
-          end: { line: 24, character: 0 },
-        }),
-      }),
+    expect(warn).toHaveBeenCalledWith(
+      "File not found: application/workspace/service/workspace_scanner.py",
     );
+    expect(openResource).not.toHaveBeenCalledWith(
+      "vscode.open",
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(findFiles).not.toHaveBeenCalled();
   });
 });

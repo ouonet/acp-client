@@ -3,7 +3,7 @@
  * Core Engine Entry Point
  */
 
-export const VERSION = "0.1.0";
+export { CLIENT_VERSION as VERSION } from "./version";
 
 export * from "./core/types/config";
 export * from "./core/types/session";

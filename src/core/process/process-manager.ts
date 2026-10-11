@@ -14,6 +14,24 @@ import type {
 import type { AgentConfig } from "../types/config";
 import { ProcessError } from "../errors";
 
+/** Kill the agent and processes it started. Windows has no process groups. */
+export function terminateChild(child: ChildProcess, signal: NodeJS.Signals): void {
+  const pid = child.pid;
+  if (pid && process.platform === "win32") {
+    spawn("taskkill", ["/PID", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    return;
+  }
+  if (pid && process.platform !== "win32") {
+    try {
+      process.kill(-pid, signal);
+      return;
+    } catch {
+      // The child is not a process-group leader.
+    }
+  }
+  try { child.kill(signal); } catch { /* already exited */ }
+}
+
 interface ManagedProcess {
   config: AgentConfig;
   child: ChildProcess;
@@ -174,6 +192,8 @@ export class ProcessManager implements IProcessPort {
           cwd: effectiveCwd,
           stdio: ["pipe", "pipe", "pipe"],
           shell: isWindows && /\.(cmd|bat)$/i.test(config.command),
+          detached: process.platform !== "win32",
+          windowsHide: true,
         });
       } catch (err: any) {
         this.log(config.id, `Failed to spawn: ${err?.message}`, "system");
@@ -218,10 +238,6 @@ export class ProcessManager implements IProcessPort {
           stderrLog = stderrLog.slice(-4000);
         }
         this.log(config.id, text, "stderr");
-      });
-
-      child.stdout?.on("data", (chunk) => {
-        this.log(config.id, chunk.toString(), "stdout");
       });
 
       child.once("spawn", () => {
@@ -298,27 +314,16 @@ export class ProcessManager implements IProcessPort {
     }
 
     if (force) {
-      try {
-        child.kill("SIGKILL");
-      } catch {
-        // Ignore if already dead
-      }
+      terminateChild(child, "SIGKILL");
       await entry.exitPromise;
       this.managed.delete(agentId);
       return;
     }
 
     try {
-      // 1. Try graceful SIGTERM
-      child.kill("SIGTERM");
-
-      // 2. Schedule SIGKILL timeout
+      terminateChild(child, "SIGTERM");
       entry.killTimeout = setTimeout(() => {
-        try {
-          child.kill("SIGKILL");
-        } catch {
-          // Ignore
-        }
+        terminateChild(child, "SIGKILL");
       }, this.gracePeriodMs);
 
       // 3. Await process exit

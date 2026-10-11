@@ -38,18 +38,28 @@ export class StorageManager implements IStoragePort {
     return update;
   }
   async getInputHistory(): Promise<string[]> {
-    try {
-      const parsed = JSON.parse(await fs.readFile(this.historyFile, 'utf-8'));
-      return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : [];
-    } catch { return []; }
+    const parsed = await this.readJson(this.historyFile);
+    if (parsed === undefined) return [];
+    if (!Array.isArray(parsed) || parsed.some((value) => typeof value !== 'string')) {
+      throw new StorageError('Prompt history must be an array of strings', this.historyFile);
+    }
+    return parsed;
   }
   async saveAgentConfigs(configs: AgentConfig[]): Promise<void> {
     await this.writeAtomic(this.configsFile, JSON.stringify(configs, null, 2));
   }
   async getAgentConfigs(): Promise<AgentConfig[]> {
+    const parsed = await this.readJson(this.configsFile);
+    if (parsed === undefined) return [];
+    if (!Array.isArray(parsed)) throw new StorageError('Agent configuration must be an array', this.configsFile);
+    return parsed;
+  }
+  private async readJson(filePath: string): Promise<unknown> {
     try {
-      const parsed = JSON.parse(await fs.readFile(this.configsFile, 'utf-8'));
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+      return JSON.parse(await fs.readFile(filePath, 'utf-8'));
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') return undefined;
+      throw new StorageError(err?.message || 'Unreadable storage file', filePath);
+    }
   }
 }

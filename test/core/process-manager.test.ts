@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
 import { ProcessManager } from "../../src/core/process/process-manager";
 import type { AgentConfig } from "../../src/core/types/config";
 import type { ProcessStatusEvent } from "../../src/core/ports";
@@ -198,17 +201,55 @@ describe("T4: ProcessManager (Lifecycle Supervision & Zombie Protection)", () =>
     });
 
     await processManager.start(config);
-    await new Promise((r) => setTimeout(r, 100));
+    for (let i = 0; i < 40 && !logs.some((l) => l.stream === "stderr"); i++) {
+      await new Promise((r) => setTimeout(r, 25));
+    }
 
+    expect(logs.some((l) => l.stream === "stdout")).toBe(false);
     expect(
       logs.some(
-        (l) => l.agentId === "agent-logging" && l.text.includes("hello stdout"),
+        (l) =>
+          l.agentId === "agent-logging" &&
+          l.stream === "stderr" &&
+          l.text.includes("hello stderr"),
       ),
     ).toBe(true);
-    expect(
-      logs.some(
-        (l) => l.agentId === "agent-logging" && l.text.includes("hello stderr"),
-      ),
-    ).toBe(true);
+  });
+
+  it("stops processes started by the agent", async () => {
+    const pidFile = path.join(os.tmpdir(), `acp-grandchild-${Date.now()}.pid`);
+    let grandchild = 0;
+    try {
+      const config: AgentConfig = {
+        id: "agent-tree",
+        name: "Tree Agent",
+        command: process.execPath,
+        args: [
+          "-e",
+          `const {spawn}=require("child_process");const fs=require("fs");const child=spawn(process.execPath,["-e","setInterval(()=>{},1000)"],{stdio:"ignore"});fs.writeFileSync(${JSON.stringify(pidFile)}, String(child.pid));setInterval(()=>{},1000);`,
+        ],
+        env: {},
+        transport: "stdio",
+        enabled: true,
+      };
+      await processManager.start(config);
+      for (let i = 0; i < 30 && !grandchild; i++) {
+        if (fs.existsSync(pidFile)) grandchild = Number(fs.readFileSync(pidFile, "utf8"));
+        else await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      expect(grandchild).toBeGreaterThan(0);
+      await processManager.stop("agent-tree");
+      let alive = true;
+      for (let i = 0; i < 40; i++) {
+        try { process.kill(grandchild, 0); } catch { alive = false; break; }
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+      expect(alive).toBe(false);
+    } finally {
+      if (grandchild) {
+        try { process.kill(grandchild); } catch { /* already gone */ }
+      }
+      fs.rmSync(pidFile, { force: true });
+    }
   });
 });

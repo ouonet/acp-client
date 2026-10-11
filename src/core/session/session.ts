@@ -3,7 +3,7 @@
  */
 
 import type { Disposable } from "../ports";
-import { deadline } from './agent-runtime';
+import { deadline, QUICK_OPERATION_MS } from './agent-runtime';
 import { SessionError } from "../errors";
 import type {
   SessionStatus,
@@ -167,7 +167,7 @@ export class Session implements ISession {
       reject = callback;
       this.pendingOperations.add(callback);
     });
-    try { return await deadline(Promise.race([work, cancelled]), 10000); }
+    try { return await deadline(Promise.race([work, cancelled]), QUICK_OPERATION_MS); }
     finally { this.pendingOperations.delete(reject); }
   }
 
@@ -389,6 +389,12 @@ export class Session implements ISession {
 
       } catch (err: any) {
         if (!this.attached || this.runtimeRevision !== revision) throw err;
+        if (err instanceof SessionError && err.message.includes("Prompt cancelled")) {
+          this.finishThinking(assistantMessage);
+          this.setStatus("idle");
+          this.updatedAt = Date.now();
+          return;
+        }
         this.messages = JSON.parse(JSON.stringify(this.messages));
         const errMsg = err?.message || String(err);
         if ((this.status as SessionStatus) !== "error") {
@@ -413,12 +419,18 @@ export class Session implements ISession {
     const revision = this.runtimeRevision;
     if (this.status === "streaming" || this.status === "waiting_approval") {
       this.settleApproval();
+      const rejectPrompt = this.currentPromptReject;
+      this.currentPromptReject = undefined;
       try {
         await this.adapter.cancel(this.id);
       } catch {
         // ignore
       }
-      if (this.attached && this.runtimeRevision === revision) this.setStatus("idle");
+      if (rejectPrompt) {
+        rejectPrompt(new SessionError(this.id, "Prompt cancelled"));
+      } else if (this.attached && this.runtimeRevision === revision) {
+        this.setStatus("idle");
+      }
     }
   }
 
@@ -429,7 +441,11 @@ export class Session implements ISession {
   ): Promise<any> {
     if (!this.attached) return Promise.resolve({ outcome: { outcome: 'cancelled' } });
     if (this.allowedToolsInSession.has(toolTitle)) {
-      const allowOpt = options.find((o) => o.kind?.startsWith("allow"));
+      const allowOnce = options.find((option) => {
+        const kind = String(option?.kind ?? "");
+        return kind === "allow_once" || (kind.startsWith("allow") && kind !== "allow_always");
+      });
+      const allowOpt = allowOnce ?? options.find((option) => option?.kind?.startsWith("allow"));
       if (allowOpt)
         return Promise.resolve({
           outcome: { outcome: "selected", optionId: allowOpt.optionId },
@@ -650,8 +666,6 @@ export class Session implements ISession {
   }
 
   private handleSessionUpdate(update: any): void {
-    this.messages = JSON.parse(JSON.stringify(this.messages));
-    this.compactions = JSON.parse(JSON.stringify(this.compactions));
     const lastMsg = this.messages[this.messages.length - 1];
 
     switch (update.sessionUpdate) {
@@ -663,6 +677,7 @@ export class Session implements ISession {
         break;
       }
       case "user_message_chunk": {
+        if (this.promptInFlight) break;
         const text =
           (typeof update.content === "string"
             ? update.content

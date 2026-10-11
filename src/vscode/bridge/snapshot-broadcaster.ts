@@ -10,8 +10,12 @@ export class SnapshotBroadcaster {
   public async broadcast(hasView: boolean): Promise<void> {
     if (!hasView) return;
     const revision = ++this.snapshotGeneration;
+    const readList = async <T>(read: () => Promise<T>, empty: T): Promise<T> => {
+      try { return await read(); } catch (error) { this.ctx.log(`Storage read failed: ${error}`); return empty; }
+    };
     const [agentConfigs, inputHistory] = await Promise.all([
-      this.ctx.storageManager.getAgentConfigs(), this.ctx.storageManager.getInputHistory(),
+      readList(() => this.ctx.storageManager.getAgentConfigs(), []),
+      readList(() => this.ctx.storageManager.getInputHistory(), []),
     ]);
     if (revision !== this.snapshotGeneration) return;
     const activeAgentId = this.ctx.sessionHub.getActiveAgentId?.() ?? this.ctx.sessionHub.getActiveSession()?.agentId;

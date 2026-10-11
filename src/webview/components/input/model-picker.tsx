@@ -20,13 +20,9 @@ export function ModelPicker({
 }) {
   const [open, setOpen] = useState(false);
   const [modelsOpen, setModelsOpen] = useState(false);
-  const [panelPosition, setPanelPosition] = useState({ left: 12, top: 12 });
-  const [modelMenuPosition, setModelMenuPosition] = useState({
-    left: 12,
-    top: 12,
-    width: 220,
-    maxHeight: 240,
-  });
+  const [cardPlacement, setCardPlacement] = useState<"above" | "below">("above");
+  const [menuPlacement, setMenuPlacement] = useState<"above" | "below">("above");
+  const [menuMaxHeight, setMenuMaxHeight] = useState<number>(300);
   const root = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -45,75 +41,67 @@ export function ModelPicker({
     if (!open || disabled) return;
     if (modelsOpen && availableModels.length > 0) {
       const selectedIndex = Math.max(0, availableModels.indexOf(selectedModel ?? ""));
-      modelOptions.current
+      const selectedEl = modelOptions.current
         ?.querySelectorAll<HTMLButtonElement>("[data-model]")
-        [selectedIndex]?.focus({ preventScroll: true });
-    } else {
-      modelToggle.current?.focus({ preventScroll: true });
+        [selectedIndex];
+      selectedEl?.focus({ preventScroll: true });
+      selectedEl?.scrollIntoView({ block: "nearest" });
     }
   }, [open, modelsOpen, disabled, availableModels, selectedModel]);
+
   useLayoutEffect(() => {
     if (!open) return;
-    const positionPanel = () => {
-      const anchor = toggle.current?.getBoundingClientRect();
+    const calculateLayout = () => {
       const popup = panel.current;
-      if (!anchor || !popup) return;
-      const left = Math.max(
-        12,
-        Math.min(anchor.left, window.innerWidth - popup.offsetWidth - 12),
-      );
-      const above = anchor.top - popup.offsetHeight - 8;
-      const top =
-        above >= 12
-          ? above
-          : Math.max(
-              12,
-              Math.min(anchor.bottom + 8, window.innerHeight - popup.offsetHeight - 12),
-            );
-      setPanelPosition((current) =>
-        current.left === left && current.top === top ? current : { left, top },
-      );
+      const anchor = toggle.current?.getBoundingClientRect();
+      if (!popup || !anchor) return;
+
+      // 1. Main card placement: pop above by default unless space above is constrained (<110px) and below has more space
+      const spaceAboveCard = anchor.top - 8;
+      const spaceBelowCard = window.innerHeight - anchor.bottom - 8;
+      const nextCardPlacement =
+        spaceAboveCard < 110 && spaceBelowCard > spaceAboveCard ? "below" : "above";
+      setCardPlacement(nextCardPlacement);
+
+      // 2. Horizontal overflow safeguard
+      const popupWidth = popup.offsetWidth;
+      const rightEdge = anchor.left + popupWidth;
+      const maxRight = window.innerWidth - 12;
+      if (rightEdge > maxRight) {
+        const overflow = rightEdge - maxRight;
+        const maxShift = anchor.left - 12;
+        const shift = Math.min(overflow, maxShift);
+        popup.style.left = `-${Math.max(0, shift)}px`;
+      } else {
+        popup.style.left = "0px";
+      }
+
+      // 3. Submenu placement: calculate whether models dropdown should pop above or below
+      if (modelsOpen) {
+        const modelBtn = modelToggle.current?.getBoundingClientRect();
+        if (modelBtn) {
+          const spaceAboveMenu = Math.max(0, modelBtn.top - 12);
+          const spaceBelowMenu = Math.max(0, window.innerHeight - modelBtn.bottom - 12);
+          // Only place below if space below has ample room (>=240px) or more than space above
+          const placeBelow =
+            spaceBelowMenu >= 240 ||
+            (spaceBelowMenu >= 160 && spaceBelowMenu >= spaceAboveMenu);
+          const nextMenuPlacement = placeBelow ? "below" : "above";
+          const availableSpace = placeBelow ? spaceBelowMenu : spaceAboveMenu;
+          const maxHeight = Math.min(320, Math.max(120, availableSpace));
+          setMenuPlacement(nextMenuPlacement);
+          setMenuMaxHeight(maxHeight);
+        }
+      }
     };
-    positionPanel();
-    window.addEventListener("resize", positionPanel);
-    window.addEventListener("scroll", positionPanel, true);
+
+    calculateLayout();
+    window.addEventListener("resize", calculateLayout);
     return () => {
-      window.removeEventListener("resize", positionPanel);
-      window.removeEventListener("scroll", positionPanel, true);
+      window.removeEventListener("resize", calculateLayout);
     };
-  }, [open]);
-  useLayoutEffect(() => {
-    if (!modelsOpen) return;
-    const positionMenu = () => {
-      const anchor = modelToggle.current?.getBoundingClientRect();
-      const menu = modelOptions.current;
-      if (!anchor || !menu) return;
-      const desiredHeight = Math.min(320, window.innerHeight * 0.45, menu.scrollHeight);
-      const spaceAbove = Math.max(0, anchor.top - 13);
-      const spaceBelow = Math.max(0, window.innerHeight - anchor.bottom - 13);
-      const placeBelow = spaceBelow >= desiredHeight || spaceBelow >= spaceAbove;
-      const availableSpace = placeBelow ? spaceBelow : spaceAbove;
-      const maxHeight = Math.min(desiredHeight, Math.max(48, availableSpace));
-      const height = Math.min(menu.scrollHeight, maxHeight);
-      const left = Math.max(
-        12,
-        Math.min(anchor.left, window.innerWidth - anchor.width - 12),
-      );
-      const top = placeBelow ? anchor.bottom + 5 : Math.max(8, anchor.top - height - 5);
-      setModelMenuPosition((current) =>
-        current.left === left && current.top === top && current.width === anchor.width && current.maxHeight === maxHeight
-          ? current
-          : { left, top, width: anchor.width, maxHeight },
-      );
-    };
-    positionMenu();
-    window.addEventListener("resize", positionMenu);
-    window.addEventListener("scroll", positionMenu, true);
-    return () => {
-      window.removeEventListener("resize", positionMenu);
-      window.removeEventListener("scroll", positionMenu, true);
-    };
-  }, [modelsOpen, panelPosition]);
+  }, [open, modelsOpen]);
+
   useEffect(() => {
     if (!open) return;
     const outside = (event: MouseEvent) => {
@@ -133,22 +121,27 @@ export function ModelPicker({
     setModelsOpen(false);
     toggle.current?.focus({ preventScroll: true });
   };
+
   const chooseModel = (model: string) => {
     if (disabled) return;
     if (model !== selectedModel) onModelChange(model);
     setModelsOpen(false);
-    modelToggle.current?.focus({ preventScroll: true });
+    if (!showLevels) {
+      close();
+    }
   };
+
   const chooseLevel = (level: string) => {
     if (disabled) return;
     if (level !== thinkingLevel) onThinkingLevelChange(level);
     close();
   };
+
   const focusLevel = (index: number) => {
     const count = availableThinkingLevels.length;
     if (count === 0) return;
     const next = Math.max(0, Math.min(index, count - 1));
-    root.current
+    panel.current
       ?.querySelectorAll<HTMLButtonElement>("[data-thinking-level]")
       [next]?.focus();
     chooseLevel(availableThinkingLevels[next]);
@@ -166,7 +159,7 @@ export function ModelPicker({
         disabled={disabled}
         onClick={() => {
           setOpen(!open);
-          setModelsOpen(true);
+          setModelsOpen(!showLevels);
         }}
         onKeyDown={(event) => {
           if (event.key === "Escape" && open) {
@@ -176,7 +169,7 @@ export function ModelPicker({
           if (event.key === "ArrowDown" || event.key === "Enter") {
             event.preventDefault();
             setOpen(true);
-            setModelsOpen(true);
+            setModelsOpen(!showLevels);
           }
         }}
       >
@@ -184,19 +177,13 @@ export function ModelPicker({
           (availableModels.length ? "Select model" : "Model unavailable")}
         <span aria-hidden="true">⌄</span>
       </button>
+
       {open && !disabled && (
-          <section
-            ref={panel}
-            role="dialog"
-            aria-label="Model and thinking level"
-            className="model-picker-panel model-picker-menu"
-            style={{
-              position: "fixed",
-              left: panelPosition.left,
-              top: panelPosition.top,
-              bottom: "auto",
-              zIndex: 10000,
-            }}
+        <section
+          ref={panel}
+          role="dialog"
+          aria-label="Model and thinking level"
+          className={`model-picker-panel model-picker-menu placement-${cardPlacement}`}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               event.preventDefault();
@@ -210,6 +197,7 @@ export function ModelPicker({
                 {thinkingLevel || "Unavailable"}
               </span>
             </div>
+
             <div className="model-picker-model">
               <button
                 type="button"
@@ -233,22 +221,14 @@ export function ModelPicker({
                   ›
                 </span>
               </button>
+
               {modelsOpen && availableModels.length > 0 && (
                 <div
                   role="menu"
                   aria-label="Available models"
-                  className="model-picker-model-options"
+                  className={`model-picker-model-options placement-${menuPlacement}`}
                   ref={modelOptions}
-                  style={{
-                    position: "fixed",
-                    left: modelMenuPosition.left,
-                    right: "auto",
-                    top: modelMenuPosition.top,
-                    bottom: "auto",
-                    width: modelMenuPosition.width,
-                    maxHeight: modelMenuPosition.maxHeight,
-                    zIndex: 10001,
-                  }}
+                  style={{ maxHeight: `${menuMaxHeight}px` }}
                 >
                   {availableModels.map((model, index) => (
                     <button
@@ -260,6 +240,7 @@ export function ModelPicker({
                       data-model={model}
                       data-model-option={model}
                       className={model === selectedModel ? "active" : ""}
+                      title={model}
                       onKeyDown={(event) => {
                         if (event.key !== "ArrowDown" && event.key !== "ArrowUp")
                           return;
@@ -282,13 +263,16 @@ export function ModelPicker({
                       }}
                       onClick={() => chooseModel(model)}
                     >
-                      <span>{model}</span>
-                      {model === selectedModel && <span aria-hidden="true">✓</span>}
+                      <span className="model-name-text">{model}</span>
+                      {model === selectedModel && (
+                        <span aria-hidden="true" className="model-check-icon">✓</span>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
             </div>
+
             {showLevels ? (
               <div
                 role="radiogroup"
@@ -321,28 +305,40 @@ export function ModelPicker({
                   style={{
                     width:
                       thinkingLevel && availableThinkingLevels.includes(thinkingLevel)
-                        ? `${((levelFocusIndex + 0.5) / availableThinkingLevels.length) * 100}%`
+                        ? `${((levelFocusIndex + 1) / availableThinkingLevels.length) * 100}%`
                         : "0%",
                   }}
                 />
-                {availableThinkingLevels.map((level, index) => (
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={level === thinkingLevel}
-                    aria-label={level}
-                    tabIndex={index === levelFocusIndex ? 0 : -1}
-                    key={level}
-                    data-level={level}
-                    data-thinking-level={level}
-                    className={level === thinkingLevel ? "active" : ""}
-                    title={level}
-                    disabled={disabled}
-                    onClick={() => chooseLevel(level)}
-                  >
-                    <span aria-hidden="true" />
-                  </button>
-                ))}
+                {availableThinkingLevels.map((level, index) => {
+                  const isActive = level === thinkingLevel;
+                  const isPast =
+                    Boolean(thinkingLevel) &&
+                    availableThinkingLevels.includes(thinkingLevel!) &&
+                    index < levelFocusIndex;
+                  return (
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      aria-label={level}
+                      tabIndex={index === levelFocusIndex ? 0 : -1}
+                      key={level}
+                      data-level={level}
+                      data-thinking-level={level}
+                      className={[
+                        isActive ? "active" : "",
+                        isPast ? "past" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      title={level}
+                      disabled={disabled}
+                      onClick={() => chooseLevel(level)}
+                    >
+                      <span aria-hidden="true" />
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="model-picker-level-unavailable">
@@ -352,8 +348,8 @@ export function ModelPicker({
               </div>
             )}
           </div>
-          </section>
-        )}
+        </section>
+      )}
     </div>
   );
 }

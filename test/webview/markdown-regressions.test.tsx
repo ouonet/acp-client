@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { readFileSync } from "node:fs";
-import { renderMarkdown } from "../../src/webview/components/chat-view";
+import { renderMarkdown } from "../../src/webview/utils/markdown-renderer";
 import { AssistantTurn } from "../../src/webview/components/chat/assistant-turn";
 import { ActionProvider } from "../../src/webview/state/action-context";
 

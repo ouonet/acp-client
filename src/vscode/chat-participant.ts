@@ -33,8 +33,12 @@ export class AcpChatParticipant implements vscode.Disposable {
     // Handle slash sub-commands: /clear or /fork
     if (request.command === "clear") {
       const configs = (await storageManager?.getAgentConfigs()) || [];
-      const defaultAgent = configs[0]?.id || "default-agent";
-      await sessionHub.createSession(defaultAgent, "Chat Session");
+      const agentId = sessionHub.getActiveAgentId?.() ?? configs[0]?.id;
+      if (!agentId) {
+        stream.markdown("Configure an Agent first.");
+        return;
+      }
+      await sessionHub.createSession(agentId, "Chat Session");
       stream.markdown("Cleared active session and created a new ACP session.");
       return;
     }
@@ -58,19 +62,22 @@ export class AcpChatParticipant implements vscode.Disposable {
     let session = sessionHub.getActiveSession();
     if (!session) {
       const configs = (await storageManager?.getAgentConfigs()) || [];
-      const defaultAgent = configs[0]?.id || "default-agent";
-      session = await sessionHub.createSession(defaultAgent, "Chat Session");
+      const agentId = sessionHub.getActiveAgentId?.() ?? configs[0]?.id;
+      if (!agentId) {
+        stream.markdown("Configure an Agent first.");
+        return;
+      }
+      session = await sessionHub.createSession(agentId, "Chat Session");
     }
 
     // Subscribe to session streaming updates
     const subscription = session.onEvent((event) => {
       if (event.type === "chunk") {
-        const text = event.payload?.content?.text || "";
-        if (text) {
-          stream.markdown(text);
-        }
+        const content = event.payload?.content;
+        const text = event.payload?.text || (typeof content === "string" ? content : content?.text) || "";
+        if (text) stream.markdown(text);
       } else if (event.type === "tool_call") {
-        stream.progress(`Executing tool: ${event.payload?.title || "tool"}...`);
+        stream.progress(`Executing tool: ${event.payload?.name || event.payload?.title || "tool"}...`);
       }
     });
 

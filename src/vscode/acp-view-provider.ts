@@ -118,7 +118,7 @@ export class AcpViewProvider implements vscode.WebviewViewProvider {
     const active = this.options.sessionHub.getActiveSession();
     if (!active) return;
     this.activeSessionSubscription = active.onEvent((event) => {
-      this.postMessage({ type: "SESSION_EVENT", payload: { sessionId: active.id, agentId: active.agentId, generation: this.options.sessionHub.getConnection?.(active.agentId)?.generation, runtimeRevision: active.serialize().runtimeRevision, event } });
+      this.postMessage({ type: "SESSION_EVENT", payload: { sessionId: active.id, agentId: active.agentId, generation: this.options.sessionHub.getConnection?.(active.agentId)?.generation, runtimeRevision: active.runtimeRevision, event } });
     });
   }
 

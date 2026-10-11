@@ -51,14 +51,17 @@ export async function deadline<T>(work: Promise<T>, milliseconds: number): Promi
   }
 }
 
-export async function guarded<T>(entry: AgentRuntime, work: Promise<T>, valid: () => boolean): Promise<T> {
+export const QUICK_OPERATION_MS = 10_000;
+export const LONG_OPERATION_MS = 120_000;
+
+export async function guarded<T>(entry: AgentRuntime, work: Promise<T>, valid: () => boolean, timeoutMs = QUICK_OPERATION_MS): Promise<T> {
   let reject!: (error: Error) => void;
   const cancelled = new Promise<never>((_, callback) => {
     reject = callback;
     entry.pending.add(callback);
   });
   try {
-    const result = await deadline(Promise.race([work, cancelled]), 10000);
+    const result = await deadline(Promise.race([work, cancelled]), timeoutMs);
     if (!valid()) throw new SessionError(entry.summary.agentId, "Stale Agent operation");
     return result;
   } finally {

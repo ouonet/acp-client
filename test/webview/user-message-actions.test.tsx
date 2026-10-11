@@ -80,6 +80,21 @@ describe("focus-triggered user message toolbar", () => {
     else expect(h.button("fork")?.disabled).toBe(true);
     expect(h.button("copy")?.disabled).toBe(false);
   });
+  it("hides rewind unless the agent is aharness", () => {
+    const h = mount();
+    h.snapshot({
+      connections: [
+        {
+          agentId: "a",
+          status: "running",
+          initialized: true,
+          generation: 3,
+          agentInfo: { name: "opencode" },
+        },
+      ],
+    });
+    expect(h.container.querySelector("[data-action='rewind-message']")).toBeNull();
+  });
   it("disables state changes for detached, disconnected, submitting and pending lifecycles", () => {
     const h = mount({ attached: false }); expect(h.button("fork")?.disabled).toBe(true);
     h.snapshot({ activeSession: h.source, connections: [] }); expect(h.button("fork")?.disabled).toBe(true);

@@ -31,5 +31,13 @@ describe('StorageManager: configuration and prompt input history', () => {
   const configs:AgentConfig[]=[{id:'agent-claude',name:'Claude Code',command:'npx',args:['@agentclientprotocol/claude-agent-acp'],env:{KEY:'val'},transport:'stdio',enabled:true}];
   await storage.saveAgentConfigs(configs);expect(await storage.getAgentConfigs()).toEqual(configs);expect(await fs.readdir(testDir)).toEqual(['agents.json']);
  });
- it('handles corrupted configuration and input history JSON',async()=>{await fs.writeFile(path.join(testDir,'agents.json'),'INVALID JSON');await fs.writeFile(path.join(testDir,'history.json'),'INVALID JSON');expect(await storage.getAgentConfigs()).toEqual([]);expect(await storage.getInputHistory()).toEqual([])});
+ it('refuses to treat corrupt configuration or history as empty',async()=>{
+  await fs.writeFile(path.join(testDir,'agents.json'),'INVALID JSON');
+  await fs.writeFile(path.join(testDir,'history.json'),'INVALID JSON');
+  await expect(storage.getAgentConfigs()).rejects.toThrow(/StorageError/);
+  await expect(storage.getInputHistory()).rejects.toThrow(/StorageError/);
+  await expect(storage.recordInputHistory('kept')).rejects.toThrow(/StorageError/);
+  expect(await fs.readFile(path.join(testDir,'agents.json'),'utf8')).toBe('INVALID JSON');
+  expect(await fs.readFile(path.join(testDir,'history.json'),'utf8')).toBe('INVALID JSON');
+});
 });

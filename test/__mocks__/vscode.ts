@@ -33,6 +33,7 @@ export const workspace = {
     writeFile: async () => {},
     delete: async () => {},
     stat: async () => ({ type: 1, size: 100 }),
+    readDirectory: async () => [["skills", 2]] as Array<[string, number]>,
   },
   findFiles: async (
     _pattern: string,
@@ -44,6 +45,13 @@ export const workspace = {
     lineCount: 100,
     lineAt: (line: number) => ({ text: `line ${line} content` }),
   }),
+};
+
+export const FileType = {
+  Unknown: 0,
+  File: 1,
+  Directory: 2,
+  SymbolicLink: 64,
 };
 
 export const window = {

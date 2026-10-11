@@ -3,6 +3,7 @@ import {
   SkillDiscovery,
   parseSkillFrontmatter,
 } from "../../src/core/skills/skill-discovery";
+import * as path from "node:path";
 import type { IWorkspacePort } from "../../src/core/ports";
 
 describe("T4: SkillDiscovery & Frontmatter Parser", () => {
@@ -64,7 +65,7 @@ Follow RED-GREEN-REFACTOR cycle strictly.`;
           .fn()
           .mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 }),
         listDirectory: vi.fn().mockImplementation(async (dir: string) => {
-          if (dir.endsWith(".agents/skills")) {
+          if (dir === path.join("/workspace", ".agents", "skills")) {
             return ["tdd", "review"];
           }
           return [];

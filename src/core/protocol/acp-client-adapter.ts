@@ -53,6 +53,8 @@ export interface NewSessionResult {
   availableCommands?: AvailableCommand[];
 }
 
+export const HANDSHAKE_TIMEOUT_MS = 60_000;
+
 export class AcpClientAdapter {
   private readonly options: AcpAdapterOptions;
   private connection: acp.ClientConnection | null = null;
@@ -209,10 +211,10 @@ export class AcpClientAdapter {
       timeout = setTimeout(() => {
         reject(
           new Error(
-            "ACP agent initialization timed out after 10000ms. The process started but did not complete the ACP JSON-RPC handshake. Check the Output panel for process logs.",
+            `ACP agent initialization timed out after ${HANDSHAKE_TIMEOUT_MS}ms. The process started but did not complete the ACP JSON-RPC handshake. Check the Output panel for process logs.`,
           ),
         );
-      }, 10000);
+      }, HANDSHAKE_TIMEOUT_MS);
     });
 
     let result: Awaited<typeof initPromise>;

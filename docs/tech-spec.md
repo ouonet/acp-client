@@ -69,7 +69,7 @@
 - `IWorkspacePort` exposes file reads, file writes, command execution, optional guarded editor edits, and optional file operations.
 - `ISession` exposes prompt, cancel, configuration, permission response, events, serialization, and adapter attachment.
 - Session status values are `idle`, `streaming`, `waiting_approval`, and `error`.
-- The composer has one model/thinking menu. Parsing keeps options whose category, id, or name is a model or a thinking/reasoning level, and stores that option id plus its select values. A click sends `SET_CONFIG_OPTION` with the id and value. The menu disables while pending and does not change the selection locally. Session snapshots and `config_option_update` replace the lists. A correlated failure is shown and the previous selection remains. Choosing a level closes the menu and focuses its trigger. Choosing a model leaves the menu open. Levels render when a model is selected, or when no models were advertised. The menu does not request options on hover.
+- The composer has one model/thinking menu. Parsing keeps options whose category, id, or name is a model or a thinking/reasoning level, and stores that option id plus its select values. A click sends `SET_CONFIG_OPTION` with the id and value. The menu disables while pending and does not change the selection locally. Session snapshots and `config_option_update` replace the lists. A correlated failure is shown and the previous selection remains. Choosing a level closes the menu and focuses its trigger. Choosing a model leaves the menu open. Levels render when a model is selected, or when no models were advertised. The menu does not request options on hover. The main card and model options submenu adapt popup direction (`above` / `below`) and max-height based on available viewport space, and the discrete thinking level track uses segmented capsule fill with concentric thumb handles.
 - Attached Sessions can retry a failed turn from `error`, including after switching models. Webview prompt admission and its post-persistence revalidation allow `idle` and `error`, while Core prevents concurrent prompts. Detached Sessions must be reloaded before sending.
 - Process status values are `stopped`, `starting`, `running`, `restarting`, and `error`.
 - `isWebviewAction` validates known action types and checks payloads for prompts, connection, permissions, and file application.
@@ -77,7 +77,7 @@
 - The chat Webview is hosted in the Activity Bar and uses `sideBar.background` / `sideBar.foreground` as its base colors, falling back to editor colors for hosts that do not expose sidebar theme tokens; local surfaces use those semantic base tokens instead of assuming the editor surface.
 - Assistant Markdown supports headings, nested/ordered/task lists, tables, blockquotes, links, images, inline/fenced code, and inline/display math using `$...$`, `$$...$$`, `\\(...\\)`, or `\\[...\\]`. Unclosed streaming fences remain readable; unknown code languages fall back to escaped text.
 - Markdown preserves code indentation and blank lines, escapes raw HTML, rejects executable link schemes, and renders KaTeX with trust disabled. Wide tables, code, and display formulas scroll inside the message.
-- File links use `OPEN_FILE` actions with line metadata. The VS Code bridge opens resources with `vscode.open`, allowing the configured editor/viewer to handle images and other binary files; text line ranges are passed as editor selection options.
+- File links use `OPEN_FILE` actions with line metadata. The VS Code bridge opens that exact path with `vscode.open`, allowing the configured editor/viewer to handle images and other binary files; text line ranges are passed as editor selection options. A missing path warns and is not resolved by filename search.
 - The Preact Markdown body handles code/diagram copying and file links through `OPEN_FILE` actions with line metadata. Completed Mermaid fences render with strict security; incomplete or invalid diagrams retain their source. PlantUML uses its external SVG service with UTF-8, raw DEFLATE compression, and PlantUML's custom URL-safe encoding. Preview images and SVG links share the compressed URL; uncompressed hexadecimal URLs are avoided because long diagrams can exceed server request-line limits.
 - Matching prompt acceptance clears unchanged submitted text and attachments. Rejection before acceptance retains input; stale outcomes and completion preserve newer drafts, including recalled history.
 - The prompt textarea grows up to 240px and then scrolls vertically. Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z and Ctrl+Y invoke the focused browser editor's native undo/redo history inside the Webview. Composition keys pass through without invoking editing shortcuts. Cmd/Ctrl+V pastes clipboard images as attachments and leaves a text-only paste unchanged.
@@ -90,7 +90,7 @@
 - Agent configuration contains command, arguments, environment, transport, enabled state, and optional working directory/model settings.
 - Session data contains identifiers, metadata, status, message history, optional fork ancestry, and the working directory used by the ACP session.
 - Assistant messages retain ordered thinking turns, each with its own tool calls, followed by separate final output. Legacy flat thinking and tool fields remain readable.
-- The shipped Preact conversation uses accent-tinted user cards with Copy and Rewind / Undo in a horizontal overlay at the right vertical midpoint, visible on mouse hover. Controls reserve no space or minimum card size. Assistant rows show the Agent name, the response time in local 24-hour `HH:mm:ss` format, Copy all and Fork together in a wrapping footer after execution content and final output. The model name is omitted. The time uses the message's existing completion timestamp, falling back to its legacy timestamp or start time when needed; missing or invalid timestamps are not displayed.
+- The shipped Preact conversation uses accent-tinted user cards with Copy, and Rewind / Undo when the connected agent reports the name `aharness`, in a horizontal overlay at the right vertical midpoint, visible on mouse hover. Controls reserve no space or minimum card size. Assistant rows show the Agent name, the response time in local 24-hour `HH:mm:ss` format, Copy all and Fork together in a wrapping footer after execution content and final output. The model name is omitted. The time uses the message's existing completion timestamp, falling back to its legacy timestamp or start time when needed; missing or invalid timestamps are not displayed.
 - Rewind keeps the current Session. Its boundary is the index before the selected user message. Confirmed rewind drops that message and everything after it. An untouched composer receives the prompt back and does not send it. A newer draft is kept. Fork includes the selected assistant response, excludes later turns, and leaves the source Session unchanged. Execution summaries, reasoning turns, and individual calls collapse independently. Tool calls are direct children of their reasoning turn; an expanded turn shows every call in order. Empty reasoning remains a visible unavailable turn.
 - Each reasoning turn shows its call count followed by thinking and elapsed time. Folded thinking uses one line with ellipsis; expanded thinking shows its full text in the same header, preserves newlines and wraps long content, with no duplicate Thinking section.
 - Execution summaries show Working/Worked, measured elapsed time, turn count and call count. The execution clock stops at first final output or prompt completion, while active tool durations refresh. Tool rows show input/result previews, full escaped details on expansion, and pending/running/failed/denied labels; completed labels are omitted. Partial diffs remain preview-only, with Apply and Open diff available only when both complete file snapshots exist.
@@ -123,12 +123,16 @@
 ## invariant
 
 - `src/core/` does not import the VS Code API or webview UI libraries.
-- Agent process shutdown attempts SIGTERM and escalates to SIGKILL after 5000 ms by default.
+- Agent process shutdown kills the process tree. Windows runs `taskkill /T /F`. Other platforms signal the spawned process group, then fall back to the child. A grace timer still escalates to SIGKILL after 5000 ms by default.
+- Initialize and connection tests fail a hung handshake after 60s. Connecting an agent and `session/load` may take up to 120s. Other RPCs stay at 10s.
+- The client identifies itself with the version in `package.json`.
+- Agent stdout is not copied to the Output channel. Stderr and lifecycle lines are.
+- Skill discovery lists directories through the workspace port.
 - Active sessions cannot start a prompt unless status is `idle` or `error`.
 - Permission responses require `waiting_approval` and the matching pending request ID.
 - Forked sessions use an Agent-issued session ID, parent metadata, and deep-cloned history.
 - A same-Agent fork calls session/fork, opens the returned Session ID, and keeps messages through the clicked response. The click index is `_meta.upToMessageIndex`. Fork is offered only after a completed assistant response. Agents without fork, and forks onto another Agent, still use session/new.
-- Rewind keeps the current Session ID. acp-client calls `_aharness/session/rewind` with `upToMessageIndex` set to the message before the selected user prompt, then truncates local history through that index.
+- Rewind is offered only when the connected agent's reported name is `aharness`. It keeps the current Session ID. acp-client calls `_aharness/session/rewind` with `upToMessageIndex` set to the message before the selected user prompt, then truncates local history through that index.
 - The first Agent history page supplements an omitted attached current fork using its acknowledged Agent-issued ID, respecting cwd and excluding pagination duplicates. Closing or detaching removes this runtime-only supplement.
 - JSON persistence uses a sibling temporary file followed by rename.
 - Prompt history is trimmed to the configured maximum of 100 entries by default and omits consecutive duplicates.
@@ -140,7 +144,7 @@
 - `AgentConfig` retains WebSocket transport for stored configuration compatibility; save, test, connect, restart, and creation explicitly reject it.
 - VS Code APIs are unavailable to core unit tests; tests use ports, mocks, and a VS Code module alias.
 - The extension requires a configured ACP-compatible agent command to create a working session.
-- The production Webview mounts `src/webview/main.tsx`. Legacy DOM chat, header, input, diff, and MCP inspector modules are not that entry. `icons.ts` is shared.
+- The production Webview mounts `src/webview/main.tsx` and `src/webview/styles/index.css`. `icons.ts` is shared.
 - Webview scripts are enabled only for the registered ACP webview and its local extension resource roots.
 - Existing legacy transcript files are not automatically deleted, read, or used to populate history.
 
@@ -154,4 +158,4 @@
 - External file and command paths are passed to adapters; core code depends on ports rather than VS Code APIs.
 - The webview communicates through structured actions and extension messages rather than direct extension internals.
 - Process environment inherits the host environment and adds configured agent variables.
-- A first-run empty configuration receives the aharness default. Later activation preserves existing configurations and intentional deletion of all configurations.
+- Activation does not write an agent configuration. An empty configuration stays empty. A missing `agents.json` or `history.json` is an empty list. A file that cannot be parsed is an error and is not overwritten.

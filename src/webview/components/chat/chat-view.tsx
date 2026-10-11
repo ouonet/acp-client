@@ -22,6 +22,8 @@ export function ChatView() {
 
   const { activeSession, streamingText, streamingThinking, pendingPermission } = state.session;
   const messages = activeSession?.messages || [];
+  const sessionConnection = state.agent.connections?.find(item => item.agentId === activeSession?.agentId);
+  const canRewind = sessionConnection?.agentInfo?.name?.toLowerCase() === "aharness";
   const isStreaming = activeSession?.status === "streaming" || !!streamingText || !!streamingThinking;
 
   useEffect(() => {
@@ -149,7 +151,9 @@ export function ChatView() {
       {messages.map((msg: any, idx: number) => {
         if (msg.role === "user") {
           return <UserBubble key={idx} content={msg.content} timestamp={msg.timestamp}
-            onRewind={() => messageActions.invoke("rewind", idx)} disabledReason={messageActions.disabledReason}
+            showRewind={canRewind}
+            onRewind={canRewind ? () => messageActions.invoke("rewind", idx) : undefined}
+            disabledReason={messageActions.disabledReason}
             rewindDisabledReason={canRestorePrompt(msg.content) ? undefined : "Rewind supports text and images only"} />;
         }
         const isCurrentStreaming = isStreaming && idx === messages.length - 1;

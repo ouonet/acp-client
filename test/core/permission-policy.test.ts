@@ -219,6 +219,25 @@ describe("T2: Three-Tier Permission Policy Gate & Session Whitelisting", () => {
     expect(secondResult.outcome.outcome).toBe("selected");
   });
 
+  it("auto-approves allow_once when allow_always is listed first", async () => {
+    const first = session.requestApproval("first", "Write", [
+      { optionId: "always", name: "Always", kind: "allow_always" },
+    ]);
+    await session.respondPermission("first", "always_allow_session", {
+      optionId: "always",
+    });
+    await first;
+
+    const second = session.requestApproval("second", "Write", [
+      { optionId: "always", name: "Always", kind: "allow_always" },
+      { optionId: "once", name: "Once", kind: "allow_once" },
+    ]);
+    await expect(second).resolves.toEqual({
+      outcome: { outcome: "selected", optionId: "once" },
+    });
+    expect(session.status).not.toBe("waiting_approval");
+  });
+
   it("should return cancelled outcome with reason when decision is deny", async () => {
     const promise = session.requestApproval("req-3", "terminal/execute", [
       { optionId: "opt-deny", name: "Deny", kind: "deny" },

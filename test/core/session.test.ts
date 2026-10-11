@@ -144,6 +144,41 @@ describe("T3: Session Domain Model & Strict FSM", () => {
     expect(session.messages[1].content).toBe("4");
   });
 
+  it("ignores user_message_chunk while a prompt is in flight", async () => {
+    let updateCallback: ((event: any) => void) | undefined;
+    const mockAdapter = {
+      onSessionUpdate: vi.fn((cb) => {
+        updateCallback = cb;
+        return { dispose: () => {} };
+      }),
+      prompt: vi.fn(async () => {
+        updateCallback!({
+          sessionId: "sess-live",
+          update: { sessionUpdate: "user_message_chunk", content: "Hello" },
+        });
+        updateCallback!({
+          sessionId: "sess-live",
+          update: { sessionUpdate: "agent_message_chunk", content: "Hi" },
+        });
+      }),
+      cancel: vi.fn(),
+    } as unknown as AcpClientAdapter;
+
+    const session = new Session({
+      id: "sess-live",
+      agentId: "agent-1",
+      adapter: mockAdapter,
+    });
+
+    await session.prompt("Hello");
+    expect(session.messages.map((message) => message.role)).toEqual([
+      "user",
+      "assistant",
+    ]);
+    expect(session.messages[0].content).toBe("Hello");
+    expect(session.messages[1].content).toBe("Hi");
+  });
+
   it("preserves successive thinking turns and an empty thinking boundary", () => {
     let updateCallback: ((event: any) => void) | undefined;
     const adapter = {

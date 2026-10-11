@@ -290,6 +290,7 @@ describe("Agent-driven combined picker", () => {
     render(view("old", ["deep"]), root);
     expect(root.querySelectorAll("select")).toHaveLength(0);
     await act(async () => { (root.querySelector("button.model-picker-toggle") as HTMLButtonElement).click(); });
+    await act(async () => { (root.querySelector(".model-picker-model-toggle") as HTMLButtonElement)?.click(); });
     await act(async () => { (root.querySelector('[data-model="new"]') as HTMLButtonElement).click(); });
     expect(onModelChange).toHaveBeenCalledWith("new");
     await act(async () => { render(view("old", ["deep"], true), root); });
@@ -332,5 +333,69 @@ describe("combined picker keyboard behavior", () => {
     await act(() => { (document.activeElement as HTMLElement).dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
     expect(root.querySelector(".model-picker-menu")).toBeNull();
     expect(document.activeElement).toBe(trigger);
+  });
+});
+
+describe("thinking level slider track layout", () => {
+  it("renders a segmented pill track with proportional fill from first to active level", async () => {
+    const { ModelPicker } = await import("../../src/webview/components/input/model-picker");
+    const root = document.createElement("div");
+    document.body.appendChild(root);
+
+    const levels = ["low", "medium", "high", "xhigh"];
+    render(
+      <ModelPicker
+        selectedModel="m1"
+        availableModels={["m1"]}
+        thinkingLevel="low"
+        availableThinkingLevels={levels}
+        onModelChange={vi.fn()}
+        onThinkingLevelChange={vi.fn()}
+      />,
+      root,
+    );
+
+    const trigger = root.querySelector(".model-picker-toggle") as HTMLButtonElement;
+    await act(async () => { trigger.click(); });
+
+    const track = root.querySelector(".model-picker-level-track") as HTMLElement;
+    expect(track).not.toBeNull();
+
+    let fill = root.querySelector(".model-picker-level-fill") as HTMLElement;
+    expect(fill.style.width).toBe("25%");
+
+    await act(async () => {
+      render(
+        <ModelPicker
+          selectedModel="m1"
+          availableModels={["m1"]}
+          thinkingLevel="xhigh"
+          availableThinkingLevels={levels}
+          onModelChange={vi.fn()}
+          onThinkingLevelChange={vi.fn()}
+        />,
+        root,
+      );
+    });
+
+    fill = root.querySelector(".model-picker-level-fill") as HTMLElement;
+    expect(fill.style.width).toBe("100%");
+
+    await act(async () => {
+      render(
+        <ModelPicker
+          selectedModel="m1"
+          availableModels={["m1"]}
+          thinkingLevel="medium"
+          availableThinkingLevels={levels}
+          onModelChange={vi.fn()}
+          onThinkingLevelChange={vi.fn()}
+        />,
+        root,
+      );
+    });
+
+    fill = root.querySelector(".model-picker-level-fill") as HTMLElement;
+    expect(fill.style.width).toBe("50%");
   });
 });

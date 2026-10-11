@@ -93,4 +93,27 @@ describe("T1: Diff Integration with VS Code Extension", () => {
       expect.stringContaining("example.ts"),
     );
   });
+
+  it("uses different temp files when two paths share a basename", async () => {
+    const executeCommandSpy = vi.spyOn(vscode.commands, "executeCommand");
+    executeCommandSpy.mockClear();
+    const handleAction = (provider as any).handleAction.bind(provider);
+    const open = (filePath: string) =>
+      handleAction({
+        type: "OPEN_DIFF_EDITOR",
+        payload: {
+          filePath,
+          originalContent: "line 1",
+          modifiedContent: "line 2",
+        },
+      });
+
+    await open("/workspace/src/example.ts");
+    await open("/workspace/other/example.ts");
+
+    const diffCalls = executeCommandSpy.mock.calls.filter(
+      (call) => call[0] === "vscode.diff",
+    );
+    expect(diffCalls[0][1].fsPath).not.toBe(diffCalls[1][1].fsPath);
+  });
 });
