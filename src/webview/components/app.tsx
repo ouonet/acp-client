@@ -4,6 +4,7 @@ import { ChatView } from "./chat/chat-view";
 import { InputDock } from "./input/input-dock";
 import { ConfigDrawer } from "./drawers/config-drawer";
 import { HistoryDrawer } from "./drawers/history-drawer";
+import { ChatLoadingOverlay, type ChatLoadingMode } from "./chat/chat-loading-overlay";
 import { ActionProvider, type ActionSender } from "../state/action-context";
 import { useAppStore } from "../state/store-context";
 
@@ -39,12 +40,39 @@ export function App({ onAction }: { onAction: ActionSender }) {
     onAction(action);
   };
 
+  const { agentConfigs, selectedAgentId, lifecyclePending } = state.agent;
+  const currentAgentId = selectedAgentId || agentConfigs[0]?.id;
+  const targetAgentId = state.session.activeSession?.agentId || currentAgentId;
+  const isPending = !!(
+    (targetAgentId && lifecyclePending?.[targetAgentId]) ||
+    (selectedAgentId && lifecyclePending?.[selectedAgentId])
+  );
+  const connection = connections?.find((c) => c.agentId === targetAgentId);
+  const isStarting =
+    connection?.status === "starting" || connection?.status === "restarting";
+  const isOverlayActive = isPending || isStarting;
+
+  const mode: ChatLoadingMode =
+    !connection?.initialized || isStarting
+      ? "connecting"
+      : !state.session.activeSession
+      ? "session"
+      : "updating";
+
+  const targetConfig = agentConfigs.find((c) => c.id === targetAgentId);
+
   return (
     <ActionProvider onAction={handleActionIntercept}>
       <div className="acp-app">
         <HeaderBar />
         <div className="main-content">
           <ChatView />
+          {isOverlayActive && (
+            <ChatLoadingOverlay
+              mode={mode}
+              agentName={targetConfig?.name || targetAgentId}
+            />
+          )}
         </div>
         {state.session.activeSession && <InputDock />}
         <ConfigDrawer open={configOpen} onClose={() => setConfigOpen(false)} />

@@ -421,11 +421,6 @@ export function HeaderBar() {
             <ActionIcon name="terminal" />
           </button>
         </div>
-        {currentPending && (
-          <div role="status" className="lifecycle-progress">
-            Updating Agent / Session…
-          </div>
-        )}
         {actionResult &&
           !currentPending &&
           (actionResult.requestId === lastRequest ||
