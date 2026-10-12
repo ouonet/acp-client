@@ -38,6 +38,7 @@
 - The automatic Session waits while any lifecycle request is pending. It does not repeat a generation already started or bound to its Session.
 - The composer mounts only while a current Session exists.
 - Lifecycle controls and prompt input share per-Agent pending request state. Rapid repeated lifecycle clicks are fenced; snapshots and unrelated acknowledgements cannot release a pending request. Independent Agents remain independently actionable.
+- While an Agent connection or Session initialization is pending (`lifecyclePending`), `.chat-loading-overlay` covers the `.main-content` conversation area with an animated SVG spinner (`.chat-loading-spinner`), status title, and explanatory subtitle. Pointer events are intercepted to prevent duplicate actions while leaving top navigation tabs unobscured. The legacy unstyled text line in the header bar is removed.
 
 ## Remote history
 
