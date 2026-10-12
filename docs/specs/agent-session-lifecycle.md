@@ -21,8 +21,9 @@
 - Widths come from off-flow copies. The strip does not scroll.
 - Unmeasured layout shows every tab and hides the menu.
 - A budget that fits no tab leaves the strip empty and lists every connection.
+- When every tab folds into the menu, the empty strip collapses so the overflow trigger aligns left with no leading gap.
 - Selection stays in connection order. The selected agent is not pulled onto the strip.
-- A menu row selects with the name and status, and disconnects with a visible button.
+- A menu row selects with the status icon and truncated name, and disconnects with a visible button. The icon reflects the live process status (`processStatuses`, falling back to the connection snapshot); the selected row keeps `aria-selected`.
 - Arrow keys move among strip tabs and stop at the ends.
 - Home and End select the first and last strip tabs.
 - Focus moves to the overflow summary when the focused tab leaves the strip.

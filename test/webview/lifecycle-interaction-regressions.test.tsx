@@ -184,7 +184,8 @@ it("moves one wide Agent into the overflow menu", async () => {
     await mount(<HeaderBar />);
     expect(root.querySelector('[role="tab"]')).toBeNull();
     const menu = root.querySelector(".agent-overflow") as HTMLDetailsElement;
-    expect(menuLabels(menu)).toEqual(["a · running"]);
+    expect(menuLabels(menu)).toEqual(["a"]);
+    expect(menu.querySelector(".agent-overflow-row .status-dot.running")).not.toBeNull();
     expect(menu.querySelector('[aria-label="Disconnect a"]')).not.toBeNull();
     const info = root.querySelectorAll(
       '[aria-label="Connection information for a"]',
@@ -240,7 +241,8 @@ it("lists only the overflowing Agent and selects it", async () => {
     expect(menu.querySelector("summary")?.getAttribute("aria-label")).toBe(
       "Agent overflow",
     );
-    expect(menuLabels(menu)).toEqual(["b · running"]);
+    expect(menuLabels(menu)).toEqual(["b"]);
+    expect(menu.querySelector(".agent-overflow-row .status-dot.running")).not.toBeNull();
     expect(root.querySelectorAll('[role="tab"]')).toHaveLength(1);
     await act(() => {
       (menu.querySelector(".menu-content button") as HTMLButtonElement).click();
@@ -331,8 +333,8 @@ it("puts every tab in the menu when none fit beside it", async () => {
     await mount(<HeaderBar />);
     expect(root.querySelector('[role="tab"]')).toBeNull();
     expect(menuLabels(root.querySelector(".agent-overflow")!)).toEqual([
-      "a · running",
-      "b · running",
+      "a",
+      "b",
     ]);
   } finally {
     restore();
@@ -353,7 +355,7 @@ it("marks the selected overflow row and leaves strip tabs unselected", async () 
     await mount(<HeaderBar />);
     expect(
       root.querySelector('.agent-overflow [aria-selected="true"]')?.textContent,
-    ).toBe("b · running");
+    ).toBe("b");
     const tabs = Array.from(root.querySelectorAll('[role="tab"]'));
     expect(tabs).toHaveLength(1);
     expect(

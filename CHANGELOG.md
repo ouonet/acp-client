@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fork any completed response through session/fork with `_meta.upToMessageIndex`. Rewind the current Session through `_aharness/session/rewind` without creating a Session.
 - Open Agent creation when none are configured, offer connect when none are initialized, start one Session after connect, and hide the composer when no Session exists.
 - Fold Agent tabs that do not fit into an overflow menu, including one wide tab or an empty strip. Selected tabs use editor-tab chrome, and disconnect appears on hover. Connection information stays on the Session row.
+- Show live process status icons with truncated names in aligned Agent overflow rows, anchored in a left-opening menu; collapse the empty tab strip so the overflow trigger aligns left when every connection is folded.
 - Select an open slash-command menu with the Up and Down keys, insert the highlighted command with Enter or Tab, and dismiss it with Escape.
 - Clear unchanged prompt input on acceptance and preserve recalled drafts when an earlier request completes.
 - Include shipped Preact components and TSX tests in ESLint checks.

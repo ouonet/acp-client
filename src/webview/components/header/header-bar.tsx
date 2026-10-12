@@ -166,6 +166,8 @@ export function HeaderBar() {
     send({ type: "SELECT_AGENT", payload: { agentId } });
   const name = (id: string) =>
     agentConfigs.find((c) => c.id === id)?.name || id;
+  const statusOf = (agentId: string, fallback?: ProcessStatus) =>
+    state.agent.processStatuses?.[agentId] ?? fallback ?? "stopped";
   const measured =
     metrics.container > 0 &&
     metrics.widths.length === connections.length &&
@@ -245,7 +247,7 @@ export function HeaderBar() {
         key={connection.agentId}
         agentId={connection.agentId}
         label={name(connection.agentId)}
-        status={connection.status}
+        status={statusOf(connection.agentId, connection.status)}
         badge={badge}
         selected={connection.agentId === selectedAgentId}
         roving={connection.agentId === rovingId}
@@ -294,9 +296,20 @@ export function HeaderBar() {
                     >
                       <button
                         type="button"
+                        className="agent-overflow-select"
                         aria-selected={connection.agentId === selectedAgentId}
                         onClick={() => select(connection.agentId)}
-                      >{`${name(connection.agentId)} · ${connection.status}`}</button>
+                      >
+                        <AgentStatusDot
+                          status={statusOf(
+                            connection.agentId,
+                            connection.status,
+                          )}
+                        />
+                        <span className="agent-overflow-label">
+                          {name(connection.agentId)}
+                        </span>
+                      </button>
                       <button
                         type="button"
                         aria-label={`Disconnect ${name(connection.agentId)}`}
