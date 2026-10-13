@@ -89,6 +89,7 @@
 - Agent ownership, navigation, history and configuration contracts are defined in [Agent and Session lifecycle](specs/agent-session-lifecycle.md).
 - Copy, fork, and rewind contracts are defined in [Conversation message actions](specs/user-message-actions.md).
 - Agent configuration contains command, arguments, environment, transport, enabled state, and optional working directory/model settings.
+- Agent argument parsing preserves Windows drive, UNC, and trailing backslashes; backslashes are only treated as escapes when followed by whitespace or a quote.
 - Session data contains identifiers, metadata, status, message history, optional fork ancestry, and the working directory used by the ACP session.
 - Assistant messages retain ordered thinking turns, each with its own tool calls, followed by separate final output. Legacy flat thinking and tool fields remain readable.
 - The shipped Preact conversation uses accent-tinted user cards with Copy, and Rewind / Undo when the connected agent reports the name `aharness`, in a horizontal overlay at the right vertical midpoint, visible on mouse hover. Controls reserve no space or minimum card size. Assistant rows show the Agent name, the response time in local 24-hour `HH:mm:ss` format, Copy all and Fork together in a wrapping footer after execution content and final output. The model name is omitted. The time uses the message's existing completion timestamp, falling back to its legacy timestamp or start time when needed; missing or invalid timestamps are not displayed.

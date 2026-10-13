@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Defensively parse ACP `SessionModeState` (`{ currentModeId, availableModes }`) objects and legacy arrays, resolving `options.modes is not iterable` runtime errors when creating sessions for agents like `aharness`.
 - Auto-derive session title from the first prompt message for newly created sessions, and handle standard ACP `session_info_update` notifications to dynamically synchronize title changes with `SessionHub`, webview store, and session history.
+- Preserve Windows drive, UNC, spaced, and trailing-separator paths when parsing and formatting Agent command arguments.
+- Keep Agent configuration validation consistent with Windows-aware command argument parsing.
 - Adaptive bidirectional popup placement algorithm for the model picker card and options submenu, dynamically adjusting direction and max-height based on viewport clearance.
 - Refined thinking level capsule track geometry and concentric thumb handle, eliminating dual-circle offset and edge clipping.
 - Cache-busting version timestamps on webview resource URIs in Extension HTML utility to prevent stale Electron cache.

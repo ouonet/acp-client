@@ -24,6 +24,37 @@ describe("command-line-args: tokenizer and formatter", () => {
       ]);
     });
 
+    it("should preserve backslashes in an unquoted Windows path", () => {
+      const input =
+        "run --directory C:\\Users\\neo\\workbench\\project\\me\\quant\\aharness aharness acp serve";
+      expect(parseCommandLineArgs(input)).toEqual([
+        "run",
+        "--directory",
+        "C:\\Users\\neo\\workbench\\project\\me\\quant\\aharness",
+        "aharness",
+        "acp",
+        "serve",
+      ]);
+    });
+
+    it("should preserve backslashes in quoted Windows paths with spaces", () => {
+      expect(
+        parseCommandLineArgs('run --directory "C:\\My Docs\\aharness" aharness'),
+      ).toEqual(["run", "--directory", "C:\\My Docs\\aharness", "aharness"]);
+    });
+
+    it("should preserve UNC paths and a trailing Windows separator", () => {
+      expect(parseCommandLineArgs("run \\\\server\\share\\aharness flag")).toEqual([
+        "run",
+        "\\\\server\\share\\aharness",
+        "flag",
+      ]);
+      expect(parseCommandLineArgs("run C:\\aharness\\")).toEqual([
+        "run",
+        "C:\\aharness\\",
+      ]);
+    });
+
     it("should handle double quotes containing spaces", () => {
       const input = 'run --dir "/path with spaces/test" --name "my agent"';
       expect(parseCommandLineArgs(input)).toEqual([
@@ -91,6 +122,24 @@ describe("command-line-args: tokenizer and formatter", () => {
       );
     });
 
+    it("should round-trip Windows paths without changing separators", () => {
+      const args = [
+        "run",
+        "--directory",
+        "C:\\Users\\neo\\workbench\\project\\me\\quant\\aharness",
+        "aharness",
+        "acp",
+        "serve",
+      ];
+      expect(parseCommandLineArgs(formatCommandLineArgs(args))).toEqual(args);
+    });
+
+    it("should round-trip a quoted Windows path with a trailing separator", () => {
+      const args = ["run", "--dir", "C:\\My Docs\\"];
+      const formatted = formatCommandLineArgs(args);
+      expect(formatted).toBe('run --dir "C:\\My Docs\\\\"');
+      expect(parseCommandLineArgs(formatted)).toEqual(args);
+    });
     it("should wrap arguments containing spaces in double quotes", () => {
       const args = ["run", "--dir", "/path with spaces", "--name", "my agent"];
       expect(formatCommandLineArgs(args)).toBe(

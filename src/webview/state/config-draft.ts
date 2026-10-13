@@ -27,14 +27,37 @@ export function validateDraft(draft: ConfigDraft): string | undefined {
   if (!config.name.trim() || !config.command.trim()) return "Agent name and executable are required.";
   if (config.transport !== "stdio") return "WebSocket transport is not supported.";
   if ([config.name, config.command, config.cwd || "", argsText].some(value => value.includes("\0"))) return "Fields must not contain NUL characters.";
-  let quote = "", escaped = false;
-  for (const char of argsText) {
-    if (escaped) { escaped = false; continue; }
-    if (char === "\\") { escaped = true; continue; }
-    if (quote) { if (char === quote) quote = ""; }
-    else if (char === '"' || char === "'") quote = char;
+  // Mirror parseCommandLineArgs: backslash is literal (Windows `C:\...`) except
+  // to escape whitespace/quote outside quotes, or according to paired-backslash
+  // rules inside quotes. A trailing backslash is valid; only an unclosed quote
+  // is an error.
+  let quote: "'" | '"' | null = null;
+  for (let i = 0; i < argsText.length; i++) {
+    const char = argsText[i];
+    const next = argsText[i + 1];
+    if (char === "\\") {
+      if (quote) {
+        let slashCount = 0;
+        while (argsText[i + slashCount] === "\\") slashCount++;
+        const quoteIndex = i + slashCount;
+        if (argsText[quoteIndex] === quote) {
+          if (slashCount % 2 === 0) quote = null;
+          i = quoteIndex;
+        } else {
+          i += slashCount - 1;
+        }
+      } else if (next !== undefined && (/\s/.test(next) || next === '"' || next === "'")) {
+        i++;
+      }
+      continue;
+    }
+    if (quote) {
+      if (char === quote) quote = null;
+    } else if (char === '"' || char === "'") {
+      quote = char;
+    }
   }
-  if (quote || escaped) return "Arguments have an unmatched quote or trailing escape.";
+  if (quote) return "Arguments have an unmatched quote or trailing escape.";
   const keys = new Set<string>();
   for (const row of envRows) {
     if (!row.key.trim() || /[=\0]/.test(row.key)) return "Environment keys must be nonempty and contain neither = nor NUL.";
