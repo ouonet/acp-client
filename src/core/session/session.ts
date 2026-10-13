@@ -99,6 +99,7 @@ export interface ISession {
   onEvent(listener: (event: SessionEvent) => void): Disposable;
   serialize(): SessionData;
   attachAdapter(adapter: AcpClientAdapter): void;
+  setTitle?(title: string): void;
 }
 
 export class Session implements ISession {
@@ -107,7 +108,25 @@ export class Session implements ISession {
   readonly id: string;
   readonly agentId: string;
   readonly cwd?: string;
-  title: string;
+  private _title = "New Session";
+  public get title(): string {
+    return this._title;
+  }
+  public set title(value: string) {
+    this.setTitle(value);
+  }
+
+  public setTitle(title: string): void {
+    const trimmed = (title || "").trim();
+    if (!trimmed || this._title === trimmed) return;
+    this._title = trimmed;
+    this.updatedAt = Date.now();
+    this.emitEvent({
+      type: "session_info_update",
+      sessionId: this.id,
+      payload: { title: this._title, updatedAt: this.updatedAt },
+    });
+  }
   model?: string;
   thinkingLevel?: ThinkingLevel;
   modelConfigId?: string;
@@ -182,7 +201,7 @@ export class Session implements ISession {
     this.id = options.id;
     this.agentId = options.agentId;
     this.cwd = options.cwd;
-    this.title = options.title || "New Session";
+    this._title = options.title || "New Session";
     this.model = options.model;
     this.thinkingLevel = options.thinkingLevel;
     this.availableModels = options.availableModels
@@ -324,6 +343,34 @@ export class Session implements ISession {
       if (!this.attached || this.runtimeRevision !== revision) throw new SessionError(this.id, 'Session is detached');
       this.setStatus("streaming");
       this.messages = [...this.messages];
+
+      if (
+        this._title === "New Session" ||
+        !this._title ||
+        this._title === "Untitled Session"
+      ) {
+        const promptText =
+          typeof text === "string"
+            ? text
+            : text
+                .map((b) => (b.type === "text" ? b.text : ""))
+                .join(" ");
+        const trimmedPrompt = promptText.trim();
+        if (trimmedPrompt) {
+          const firstLine = trimmedPrompt
+            .split(/\r?\n/)[0]
+            .replace(/^[#*`\-\s]+/, "")
+            .trim();
+          const candidate = firstLine || trimmedPrompt.slice(0, 50);
+          const derivedTitle =
+            candidate.length > 50
+              ? `${candidate.slice(0, 47)}...`
+              : candidate;
+          if (derivedTitle) {
+            this.setTitle(derivedTitle);
+          }
+        }
+      }
 
       // Append user message
       this.messages.push({
@@ -676,6 +723,23 @@ export class Session implements ISession {
         }
         break;
       }
+      case "session_info_update":
+      case "title_update":
+      case "session_info": {
+        if (typeof update.title === "string" && update.title.trim()) {
+          this.setTitle(update.title.trim());
+        }
+        if (update.updatedAt) {
+          const ts =
+            typeof update.updatedAt === "number"
+              ? update.updatedAt
+              : Date.parse(update.updatedAt);
+          if (!Number.isNaN(ts) && ts > 0) {
+            this.updatedAt = ts;
+          }
+        }
+        break;
+      }
       case "user_message_chunk": {
         if (this.promptInFlight) break;
         const text =
@@ -693,6 +757,17 @@ export class Session implements ISession {
             role: "user",
             content: text,
           });
+        }
+        if (
+          (this._title === "New Session" || !this._title || this._title === "Untitled Session") &&
+          text.trim()
+        ) {
+          const firstLine = text.trim().split(/\r?\n/)[0].replace(/^[#*`\-\s]+/, "").trim();
+          const candidate = firstLine || text.trim().slice(0, 50);
+          const derivedTitle = candidate.length > 50 ? `${candidate.slice(0, 47)}...` : candidate;
+          if (derivedTitle) {
+            this.setTitle(derivedTitle);
+          }
         }
         break;
       }

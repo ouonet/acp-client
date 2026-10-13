@@ -53,7 +53,7 @@ export function mountApp(): void {
         globalStore.dispatch({ type: "TOOL_RESULT", payload: sEvent.payload });
       } else if (sEvent.type === "permission_request") {
         globalStore.dispatch({ type: "PERMISSION_REQUEST", payload: sEvent.payload });
-      } else if (sEvent.type === "available_commands_update" || sEvent.type === "config_option_update") {
+      } else if (sEvent.type === "available_commands_update" || sEvent.type === "config_option_update" || sEvent.type === "session_info_update") {
         globalStore.dispatch({ type: "SESSION_EVENT", payload: sEvent });
       }
     } else if (msg.type === "PROCESS_STATUS_CHANGE") {

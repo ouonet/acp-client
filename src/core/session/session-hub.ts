@@ -314,6 +314,18 @@ export class SessionHub implements ISessionHub {
     entry.session = session;
     entry.staging = undefined;
     session.onEvent((event) => {
+      if (event.type === "session_info_update") {
+        const meta = this.remoteMeta.get(this.key(session.agentId, session.id));
+        if (meta) {
+          meta.title = session.title;
+        } else {
+          this.remoteMeta.set(this.key(session.agentId, session.id), {
+            agentId: session.agentId,
+            cwd: session.cwd,
+            title: session.title,
+          });
+        }
+      }
       if (event.type === "chunk" || event.type === "thinking" || event.type === "tool_call" || event.type === "tool_result" || event.type === "compaction_chunk") return;
       this.notify(false);
     });

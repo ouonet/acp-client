@@ -161,6 +161,7 @@ export interface SessionEvent {
     | "available_commands_update"
     | "compaction"
     | "compaction_chunk"
+    | "session_info_update"
     | "error";
   sessionId: string;
   agentId?: string;

@@ -85,6 +85,30 @@ export function sessionReducer(state: SessionState, action: AppAction): SessionS
       });
       return { ...state, activeSession: { ...state.activeSession, messages: updatedMessages } };
     }
+    case "SESSION_EVENT": {
+      if (action.payload.type === "session_info_update" && state.activeSession) {
+        const { title, updatedAt } = (action.payload.payload || {}) as {
+          title?: string;
+          updatedAt?: number;
+        };
+        const nextTitle = title || state.activeSession.title;
+        const nextUpdatedAt = updatedAt || state.activeSession.updatedAt;
+        return {
+          ...state,
+          activeSession: {
+            ...state.activeSession,
+            title: nextTitle,
+            updatedAt: nextUpdatedAt,
+          },
+          sessions: state.sessions.map((s) =>
+            s.id === state.activeSession?.id
+              ? { ...s, title: nextTitle, updatedAt: nextUpdatedAt }
+              : s,
+          ),
+        };
+      }
+      return state;
+    }
     default:
       return state;
   }
