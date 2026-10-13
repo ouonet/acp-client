@@ -286,6 +286,12 @@ export interface WebviewStateSnapshot {
     sessionId?: string;
     requestId: string;
     toolTitle: string;
+    toolName?: string;
+    toolKind?: string;
+    toolCallId?: string;
+    toolInput?: unknown;
+    toolContent?: unknown;
+    toolLocations?: unknown;
     options: readonly { optionId: string; name: string; kind: string }[];
   };
   sessions: SessionSummary[];

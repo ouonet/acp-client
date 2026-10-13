@@ -47,10 +47,28 @@ export function createPermissionHandler(
         toolCall?.toolCallId ||
         toolCall?.id ||
         "Tool request";
+      const toolName =
+        toolCall?.name || toolCall?.title || undefined;
+      const toolKind =
+        typeof toolCall?.kind === "string" ? toolCall.kind : undefined;
+      const toolCallId =
+        toolCall?.toolCallId || toolCall?.id || undefined;
+      const toolInput =
+        toolCall?.rawInput ?? toolCall?.raw_input ?? toolCall?.input;
+      const toolContent = toolCall?.content;
+      const toolLocations = toolCall?.locations;
       return await session.requestApproval(
         randomUUID(),
         title,
         params?.options || [],
+        {
+          ...(toolName !== undefined ? { toolName } : {}),
+          ...(toolKind !== undefined ? { toolKind } : {}),
+          ...(toolCallId !== undefined ? { toolCallId } : {}),
+          ...(toolInput !== undefined ? { toolInput } : {}),
+          ...(toolContent !== undefined ? { toolContent } : {}),
+          ...(toolLocations !== undefined ? { toolLocations } : {}),
+        },
       );
     } catch {
       return cancelled;

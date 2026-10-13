@@ -28,7 +28,22 @@ export interface PendingApproval {
   readonly sessionId?: string;
   readonly requestId: string;
   readonly toolTitle: string;
+  readonly toolName?: string;
+  readonly toolKind?: string;
+  readonly toolCallId?: string;
+  readonly toolInput?: unknown;
+  readonly toolContent?: unknown;
+  readonly toolLocations?: unknown;
   readonly options: readonly { optionId: string; name: string; kind: string }[];
+}
+
+export interface ToolApprovalDetail {
+  toolName?: string;
+  toolKind?: string;
+  toolCallId?: string;
+  toolInput?: unknown;
+  toolContent?: unknown;
+  toolLocations?: unknown;
 }
 
 export interface SessionOptions {
@@ -87,6 +102,7 @@ export interface ISession {
     requestId: string,
     toolTitle: string,
     options: any[],
+    detail?: ToolApprovalDetail,
   ): Promise<any>;
   prompt(text: string | ContentBlock[], options?: PromptOptions): Promise<void>;
   cancel(): Promise<void>;
@@ -165,11 +181,17 @@ export class Session implements ISession {
 
   public get pendingApproval(): PendingApproval | undefined {
     if (!this.approval) return undefined;
-    const { requestId, toolTitle, options } = this.approval;
+    const { requestId, toolTitle, toolName, toolKind, toolCallId, toolInput, toolContent, toolLocations, options } = this.approval;
     return {
       sessionId: this.id,
       requestId,
       toolTitle,
+      ...(toolName !== undefined ? { toolName } : {}),
+      ...(toolKind !== undefined ? { toolKind } : {}),
+      ...(toolCallId !== undefined ? { toolCallId } : {}),
+      ...(toolInput !== undefined ? { toolInput } : {}),
+      ...(toolContent !== undefined ? { toolContent } : {}),
+      ...(toolLocations !== undefined ? { toolLocations } : {}),
       options: options.map((option) => ({ ...option })),
     };
   }
@@ -485,6 +507,7 @@ export class Session implements ISession {
     requestId: string,
     toolTitle: string,
     options: any[],
+    detail?: ToolApprovalDetail,
   ): Promise<any> {
     if (!this.attached) return Promise.resolve({ outcome: { outcome: 'cancelled' } });
     if (this.allowedToolsInSession.has(toolTitle)) {
@@ -505,6 +528,12 @@ export class Session implements ISession {
       this.approval = {
         requestId,
         toolTitle,
+        ...(detail?.toolName !== undefined ? { toolName: detail.toolName } : {}),
+        ...(detail?.toolKind !== undefined ? { toolKind: detail.toolKind } : {}),
+        ...(detail?.toolCallId !== undefined ? { toolCallId: detail.toolCallId } : {}),
+        ...(detail?.toolInput !== undefined ? { toolInput: detail.toolInput } : {}),
+        ...(detail?.toolContent !== undefined ? { toolContent: detail.toolContent } : {}),
+        ...(detail?.toolLocations !== undefined ? { toolLocations: detail.toolLocations } : {}),
         options: options.map((opt: any) => {
           const optionId = String(opt.optionId || opt.option_id || opt.id || "option");
           const name = String(opt.name || opt.title || "Option");

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Structured tool approval request details (`toolName`, `toolKind`, `toolCallId`, `toolInput`, `toolContent`, `toolLocations`) on `Session` approval requests and `pendingApproval` state.
 - Frosted-glass loading card overlay with animated spinner and status subtitle in the conversation area during Agent connection and Session initialization, replacing the legacy plain text line in the header bar.
 - Clean up `.obsolete` uninstalled extension records and synchronize `extensions.json` in extension link scripts to guarantee IDE recognition.
 - Cross-platform extension directory linking and cleaning script supporting Windows, macOS, and Linux for VS Code, Cursor, and Antigravity IDE.
