@@ -131,6 +131,7 @@ describe("T6: Multi-Session Hub & Session Forking Engine", () => {
           return { stopReason: "end_turn" };
         }),
       cancel: vi.fn().mockResolvedValue(undefined),
+      setSessionMode: vi.fn().mockResolvedValue(undefined),
       onSessionUpdate: (listener: (event: any) => void) => {
         sessionUpdateHandler = listener;
         return {
@@ -764,5 +765,26 @@ describe("T6: Multi-Session Hub & Session Forking Engine", () => {
       expect(reloaded?.availableModels).toEqual(["deepseek-v4-pro", "deepseek-v3"]);
       expect(reloaded?.messages).toHaveLength(2);
     });
+
+    it("should set session mode and propagate to active session", async () => {
+      const hub = new SessionHub({
+        processManager: mockProcessPort,
+        adapterFactory: async () => mockAdapter as any,
+      });
+
+      mockAdapter.newSession.mockResolvedValueOnce({
+        sessionId: "sess-mode-hub",
+        modes: [{ id: "ask", name: "Ask" }, { id: "auto", name: "Auto" }],
+        currentModeId: "ask",
+      });
+
+      const session = await hub.createSession("agent-1", "Mode Test");
+      expect(session.currentModeId).toBe("ask");
+
+      await hub.setSessionMode(session.id, "auto");
+      expect(mockAdapter.setSessionMode).toHaveBeenCalledWith("sess-mode-hub", "auto");
+      expect(session.currentModeId).toBe("auto");
+    });
   });
 });
+

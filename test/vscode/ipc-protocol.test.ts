@@ -106,6 +106,9 @@ describe("T1: Shared IPC Protocol & VS Code Workspace Adapter", () => {
         },
         false,
       ],
+      [{ type: "SET_SESSION_MODE", payload: { sessionId: "s", modeId: "auto" } }, true],
+      [{ type: "SET_SESSION_MODE", payload: { sessionId: "s", modeId: "" } }, false],
+      [{ type: "SET_SESSION_MODE", payload: { sessionId: "s" } }, false],
     ])("validates action payload %#", (action, valid) => {
       expect(isWebviewAction(action)).toBe(valid);
     });

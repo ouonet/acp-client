@@ -86,6 +86,18 @@ export function sessionReducer(state: SessionState, action: AppAction): SessionS
       return { ...state, activeSession: { ...state.activeSession, messages: updatedMessages } };
     }
     case "SESSION_EVENT": {
+      if (action.payload.type === "mode_change" && state.activeSession) {
+        const { currentModeId } = (action.payload.payload || {}) as { currentModeId?: string };
+        if (currentModeId) {
+          return {
+            ...state,
+            activeSession: {
+              ...state.activeSession,
+              currentModeId,
+            },
+          };
+        }
+      }
       if (action.payload.type === "session_info_update" && state.activeSession) {
         const { title, updatedAt } = (action.payload.payload || {}) as {
           title?: string;

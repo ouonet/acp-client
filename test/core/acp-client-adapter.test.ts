@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { PassThrough, Readable, Writable } from "node:stream";
 import * as acp from "@agentclientprotocol/sdk";
 import { AcpClientAdapter } from "../../src/core/protocol/acp-client-adapter";
@@ -568,3 +568,93 @@ describe("config option category parsing", () => {
     ])).toMatchObject({ modelConfigId: "engine", thinkingConfigId: "reason", models: ["m1", "m2"], thinkingLevels: ["ultra"] });
   });
 });
+
+describe("session modes parsing", () => {
+  it("parses modes from standard ACP SessionModeState object", async () => {
+    const { parseModes } = await import("../../src/core/protocol/acp-client-adapter");
+    const parsed = parseModes({
+      currentModeId: "ask",
+      availableModes: [
+        { id: "ask", name: "Ask", description: "Ask permission" },
+        { id: "auto", name: "Auto", description: "Auto run safe commands" },
+        { id: "full", name: "Full Access" },
+      ],
+    });
+    expect(parsed).toEqual([
+      { id: "ask", name: "Ask" },
+      { id: "auto", name: "Auto" },
+      { id: "full", name: "Full Access" },
+    ]);
+  });
+
+  it("parses modes from snake_case available_modes", async () => {
+    const { parseModes } = await import("../../src/core/protocol/acp-client-adapter");
+    const parsed = parseModes({
+      current_mode_id: "code",
+      available_modes: [
+        { id: "code", name: "Code Mode" },
+      ],
+    });
+    expect(parsed).toEqual([
+      { id: "code", name: "Code Mode" },
+    ]);
+  });
+
+  it("parses modes from plain array", async () => {
+    const { parseModes } = await import("../../src/core/protocol/acp-client-adapter");
+    const parsed = parseModes([
+      { id: "architect", name: "Architect" },
+    ]);
+    expect(parsed).toEqual([
+      { id: "architect", name: "Architect" },
+    ]);
+  });
+
+  it("safely handles null, undefined, empty, or non-iterable inputs", async () => {
+    const { parseModes } = await import("../../src/core/protocol/acp-client-adapter");
+    expect(parseModes(null)).toBeUndefined();
+    expect(parseModes(undefined)).toBeUndefined();
+    expect(parseModes({})).toBeUndefined();
+    expect(parseModes("invalid")).toBeUndefined();
+    expect(parseModes(123)).toBeUndefined();
+    expect(parseModes({ availableModes: [] })).toBeUndefined();
+  });
+
+  it("extracts currentModeId from standard object and snake_case object", async () => {
+    const { parseCurrentModeId } = await import("../../src/core/protocol/acp-client-adapter");
+    expect(parseCurrentModeId({ currentModeId: "ask", availableModes: [] })).toBe("ask");
+    expect(parseCurrentModeId({ current_mode_id: "auto", available_modes: [] })).toBe("auto");
+    expect(parseCurrentModeId(null)).toBeUndefined();
+    expect(parseCurrentModeId([])).toBeUndefined();
+    expect(parseCurrentModeId({})).toBeUndefined();
+  });
+
+  it("sends session/set_mode request via setSessionMode", async () => {
+    const { AcpClientAdapter } = await import("../../src/core/protocol/acp-client-adapter");
+    const sentRequests: any[] = [];
+    const mockConnection = {
+      agent: {
+        request: vi.fn().mockImplementation((method: string, params: unknown) => {
+          sentRequests.push({ method, params });
+          return Promise.resolve({});
+        }),
+      },
+      closed: new Promise(() => {}),
+    };
+    const adapter = new AcpClientAdapter({
+      input: new (await import("node:stream")).PassThrough(),
+      output: new (await import("node:stream")).PassThrough(),
+    });
+    (adapter as any).connection = mockConnection;
+    (adapter as any).connected = true;
+
+    await adapter.setSessionMode("sess-1", "auto");
+
+    expect(mockConnection.agent.request).toHaveBeenCalledWith("session/set_mode", {
+      sessionId: "sess-1",
+      modeId: "auto",
+    });
+  });
+});
+
+

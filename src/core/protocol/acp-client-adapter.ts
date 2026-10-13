@@ -44,7 +44,8 @@ export interface LoadSessionResult {
 
 export interface NewSessionResult {
   sessionId: string;
-  modes?: any;
+  modes?: Array<{ id: string; name: string }>;
+  currentModeId?: string;
   configOptions?: any[];
   models?: string[];
   currentModel?: string;
@@ -249,12 +250,14 @@ export class AcpClientAdapter {
 
     const sessionId = response.sessionId || response.session_id;
     const configOpts = response.configOptions || response.config_options;
-    const modes = response.modes;
+    const modes = parseModes(response.modes);
+    const currentModeId = parseCurrentModeId(response.modes);
     const parsed = parseConfigOptions(configOpts);
 
     return {
       sessionId,
       modes,
+      currentModeId,
       configOptions: configOpts,
       models: parsed.models,
       currentModel: parsed.currentModel,
@@ -285,7 +288,8 @@ export class AcpClientAdapter {
     const parsed = parseConfigOptions(configOpts);
     return {
       sessionId: response.sessionId || response.session_id,
-      modes: response.modes,
+      modes: parseModes(response.modes),
+      currentModeId: parseCurrentModeId(response.modes),
       configOptions: configOpts,
       models: parsed.models,
       currentModel: parsed.currentModel,
@@ -393,6 +397,8 @@ export class AcpClientAdapter {
 
     return {
       ...response,
+      modes: parseModes(response?.modes),
+      currentModeId: parseCurrentModeId(response?.modes),
       configOptions: configOpts,
       models: parsed.models,
       currentModel: parsed.currentModel,
@@ -420,6 +426,21 @@ export class AcpClientAdapter {
         sessionId,
         configId,
         value,
+      },
+    );
+  }
+
+  public async setSessionMode(
+    sessionId: string,
+    modeId: string,
+  ): Promise<void> {
+    this.assertConnected();
+
+    await this.connection!.agent.request(
+      acp.methods.agent.session.setMode,
+      {
+        sessionId,
+        modeId,
       },
     );
   }
@@ -553,4 +574,39 @@ export function parseAvailableCommands(raw: any): AvailableCommand[] | undefined
       ...(cmd.input ? { input: cmd.input } : {}),
     }))
     .filter((c) => c.name.length > 0);
+}
+
+export function parseModes(
+  rawModes: any,
+): Array<{ id: string; name: string }> | undefined {
+  if (!rawModes) return undefined;
+
+  let list: any[] | undefined;
+  if (Array.isArray(rawModes)) {
+    list = rawModes;
+  } else if (typeof rawModes === "object") {
+    if (Array.isArray(rawModes.availableModes)) {
+      list = rawModes.availableModes;
+    } else if (Array.isArray(rawModes.available_modes)) {
+      list = rawModes.available_modes;
+    }
+  }
+
+  if (!list) return undefined;
+
+  const parsed = list
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      id: String(item.id ?? item.name ?? ""),
+      name: String(item.name ?? item.id ?? ""),
+    }))
+    .filter((item) => item.id.length > 0);
+
+  return parsed.length > 0 ? parsed : undefined;
+}
+
+export function parseCurrentModeId(rawModes: any): string | undefined {
+  if (!rawModes || typeof rawModes !== "object" || Array.isArray(rawModes)) return undefined;
+  const cur = rawModes.currentModeId ?? rawModes.current_mode_id;
+  return typeof cur === "string" && cur.trim().length > 0 ? cur.trim() : undefined;
 }

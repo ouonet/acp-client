@@ -54,6 +54,7 @@ export class ActionRouter {
       case "RESTART_AGENT_PROCESS": return this.config.handleRestartAgent(action.payload.agentId);
       case "STOP_AGENT_PROCESS": return this.config.handleStopAgent(action.payload.agentId);
       case "SET_CONFIG_OPTION": return this.config.handleSetConfigOption(action.payload);
+      case "SET_SESSION_MODE": return this.sessions.handleSetSessionMode(action.payload);
       case "TEST_AGENT_CONNECTION": return this.config.handleTestConnection(action.payload);
       case "CANCEL_AGENT_TEST": return this.config.handleCancelAgentTest(action.payload);
       case "PICK_AGENT_DIRECTORY": return this.config.handlePickAgentDirectory(action.payload);

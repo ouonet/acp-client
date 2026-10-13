@@ -117,6 +117,7 @@ export interface SessionData {
   availableCommands?: AvailableCommand[];
   capabilities?: any;
   modes?: Array<{ id: string; name: string }>;
+  currentModeId?: string;
   compactions?: CompactionEntry[];
   createdAt: number;
   updatedAt: number;
@@ -141,6 +142,7 @@ export interface SessionSummary {
   availableCommands?: AvailableCommand[];
   capabilities?: any;
   modes?: Array<{ id: string; name: string }>;
+  currentModeId?: string;
   createdAt: number;
   updatedAt: number;
   status?: SessionStatus;
@@ -162,6 +164,7 @@ export interface SessionEvent {
     | "compaction"
     | "compaction_chunk"
     | "session_info_update"
+    | "mode_change"
     | "error";
   sessionId: string;
   agentId?: string;

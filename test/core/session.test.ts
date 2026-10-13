@@ -522,4 +522,101 @@ describe("configuration update ordering", () => {
     await pending;
     expect(session.model).toBe("latest");
   });
+
+  it("normalizes modes from ACP SessionModeState object without throwing", () => {
+    const session = new Session({
+      id: "sess-modes",
+      agentId: "agent-1",
+      adapter: { onSessionUpdate: () => ({ dispose: () => {} }) } as unknown as AcpClientAdapter,
+      modes: {
+        currentModeId: "ask",
+        availableModes: [
+          { id: "ask", name: "Ask" },
+          { id: "auto", name: "Auto" },
+          { id: "full", name: "Full Access" },
+        ],
+      } as any,
+    });
+
+    expect(session.modes).toEqual([
+      { id: "ask", name: "Ask" },
+      { id: "auto", name: "Auto" },
+      { id: "full", name: "Full Access" },
+    ]);
+    expect(session.currentModeId).toBe("ask");
+  });
+
+  it("changes session mode via setMode and updates currentModeId", async () => {
+    const mockAdapter = {
+      onSessionUpdate: vi.fn().mockReturnValue({ dispose: () => {} }),
+      setSessionMode: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AcpClientAdapter;
+
+    const session = new Session({
+      id: "sess-modes",
+      agentId: "agent-1",
+      adapter: mockAdapter,
+      modes: {
+        currentModeId: "ask",
+        availableModes: [
+          { id: "ask", name: "Ask" },
+          { id: "auto", name: "Auto" },
+        ],
+      } as any,
+    });
+
+    const events: any[] = [];
+    session.onEvent((e) => events.push(e));
+
+    await session.setMode("auto");
+
+    expect(session.currentModeId).toBe("auto");
+    expect(mockAdapter.setSessionMode).toHaveBeenCalledWith("sess-modes", "auto");
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "mode_change",
+        sessionId: "sess-modes",
+        payload: { currentModeId: "auto" },
+      }),
+    );
+  });
+
+  it("updates currentModeId on current_mode_update notification", () => {
+    let notify!: (event: any) => void;
+    const mockAdapter = {
+      onSessionUpdate: vi.fn((cb) => { notify = cb; return { dispose: () => {} }; }),
+    } as unknown as AcpClientAdapter;
+
+    const session = new Session({
+      id: "sess-modes",
+      agentId: "agent-1",
+      adapter: mockAdapter,
+      modes: {
+        currentModeId: "ask",
+        availableModes: [{ id: "ask", name: "Ask" }, { id: "full", name: "Full" }],
+      } as any,
+    });
+
+    const events: any[] = [];
+    session.onEvent((e) => events.push(e));
+
+    notify({
+      sessionId: "sess-modes",
+      update: {
+        sessionUpdate: "current_mode_update",
+        currentModeId: "full",
+      },
+    });
+
+    expect(session.currentModeId).toBe("full");
+    expect(events).toContainEqual(
+      expect.objectContaining({
+        type: "mode_change",
+        sessionId: "sess-modes",
+        payload: { currentModeId: "full" },
+      }),
+    );
+  });
 });
+
+

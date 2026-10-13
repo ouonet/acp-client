@@ -1,0 +1,116 @@
+.mode-picker-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mode-picker-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--vscode-widget-border, transparent);
+  border-radius: 999px;
+  color: var(--vscode-foreground);
+  background: var(--vscode-input-background);
+  padding: 4px 10px;
+  max-width: 160px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.2;
+  transition: all 0.15s ease;
+}
+
+.mode-picker-toggle:hover:not(:disabled) {
+  border-color: var(--vscode-focusBorder, #007fd4);
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+}
+
+.mode-picker-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mode-picker-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode-picker-chevron {
+  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mode-picker-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: min(240px, calc(100vw - 24px));
+  padding: 6px;
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 10px;
+  background: var(--vscode-menu-background, var(--bg-primary));
+  color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  box-shadow: 0 5px 18px var(--vscode-widget-shadow, #0004);
+  box-sizing: border-box;
+  z-index: 10000;
+}
+
+.mode-picker-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 8px 6px;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-widget-border, rgba(255, 255, 255, 0.08));
+  margin-bottom: 4px;
+}
+
+.mode-picker-options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.mode-picker-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.mode-picker-option:hover:not(:disabled) {
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+}
+
+.mode-picker-option.active {
+  background: var(--vscode-list-activeSelectionBackground, rgba(0, 120, 212, 0.25));
+  font-weight: 500;
+}
+
+.mode-picker-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.mode-picker-option-desc {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  margin-top: 2px;
+  line-height: 1.3;
+}

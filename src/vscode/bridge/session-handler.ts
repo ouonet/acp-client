@@ -80,4 +80,18 @@ export class SessionHandler {
     this.ctx.bindActiveSessionEvents();
     await this.ctx.broadcastStateSnapshot();
   }
+
+  public async handleSetSessionMode(payload: { sessionId?: string; agentId?: string; modeId: string }): Promise<void> {
+    const session = payload.sessionId ? this.ctx.sessionHub.getSession(payload.sessionId, payload.agentId) : this.ctx.sessionHub.getActiveSession();
+    if (!session || session.attached === false) throw new Error("Session is unavailable");
+    const current = session.serialize();
+    if (!current.modes?.some(m => m.id === payload.modeId)) {
+      throw new Error(`Mode "${payload.modeId}" is not advertised`);
+    }
+    if (session.setMode) {
+      await session.setMode(payload.modeId);
+    }
+    await this.ctx.broadcastStateSnapshot();
+  }
 }
+

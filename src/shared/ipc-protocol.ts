@@ -156,6 +156,13 @@ type LegacyWebviewAction =
         configId: string;
         value: string;
       };
+    }
+  | {
+      type: "SET_SESSION_MODE";
+      payload: {
+        sessionId?: string;
+        modeId: string;
+      };
     };
 
 export interface ActionMetadata {
@@ -198,6 +205,7 @@ export const WEBVIEW_ACTION_TYPES = new Set<string>([
   "SHOW_OUTPUT",
   "OPEN_FILE",
   "SET_CONFIG_OPTION",
+  "SET_SESSION_MODE",
   "REFRESH_SESSIONS",
 ]);
 
@@ -237,6 +245,7 @@ export function isWebviewAction(val: unknown): val is WebviewAction {
       return nonempty(payload.filePath);
     case "INSERT_CODE_TO_EDITOR": return typeof payload.code === "string";
     case "SET_CONFIG_OPTION": return nonempty(payload.configId) && typeof payload.value === "string";
+    case "SET_SESSION_MODE": return nonempty(payload.modeId);
     case "CONNECT_AGENT":
       return typeof payload.agentId === "string" && payload.agentId.length > 0;
     case "SEND_PROMPT":
@@ -305,6 +314,7 @@ export interface WebviewStateSnapshot {
   }[];
   activeAgentCapabilities?: any;
   activeModes?: Array<{ id: string; name: string }>;
+  activeCurrentModeId?: string;
 }
 
 export type ExtensionMessage =

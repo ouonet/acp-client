@@ -4,6 +4,7 @@ import { useAction } from "../../state/action-context";
 import { PromptTextarea } from "./prompt-textarea";
 import { filterSlashItems, SlashPopup } from "./slash-popup";
 import { ModelPicker } from "./model-picker";
+import { ModePicker } from "./mode-picker";
 import { AttachmentChips } from "./attachment-chips";
 import { AttachmentButton } from "./attachment-button";
 import { clipboardImageFiles } from "./clipboard-images";
@@ -112,6 +113,26 @@ export function InputDock() {
     sendAction({ type: "SET_CONFIG_OPTION", payload: { sessionId, ...target, requestId, configId, value } });
   };
 
+  const handleModeChange = (modeId: string) => {
+    if (!sessionId || detached || lifecyclePending || isStreaming) return;
+    dispatch({
+      type: "SESSION_EVENT",
+      payload: {
+        type: "mode_change",
+        sessionId,
+        payload: { currentModeId: modeId },
+      },
+    });
+    sendAction({
+      type: "SET_SESSION_MODE",
+      payload: {
+        sessionId,
+        ...target,
+        modeId,
+      },
+    });
+  };
+
   const handleKeyDown = (e: KeyboardEvent) => {
     if (slashOpen && !e.isComposing) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -206,6 +227,12 @@ export function InputDock() {
             disabled={!sessionId || detached || lifecyclePending || !!configPending}
             onModelChange={(model) => sendConfig(modelConfigId, model)}
             onThinkingLevelChange={(level) => sendConfig(thinkingConfigId, level)}
+          />
+          <ModePicker
+            currentModeId={activeSession?.currentModeId}
+            availableModes={activeSession?.modes}
+            disabled={!sessionId || detached || lifecyclePending || isStreaming}
+            onModeChange={handleModeChange}
           />
           <div className="toolbar-right input-actions-right">
             {isStreaming ? (

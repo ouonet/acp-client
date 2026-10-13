@@ -39,6 +39,7 @@ export class SnapshotBroadcaster {
       pendingPermission: active?.pendingApproval, skills,
       activeAgentCapabilities: this.ctx.sessionHub.getConnection?.(activeAgentId ?? "")?.capabilities ?? serialized?.capabilities,
       activeModes: serialized?.modes,
+      activeCurrentModeId: serialized?.currentModeId,
     };
     await this.ctx.postMessage({ type: "STATE_SNAPSHOT", payload: snapshot });
   }

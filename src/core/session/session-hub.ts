@@ -353,6 +353,7 @@ export class SessionHub implements ISessionHub {
       availableThinkingLevels: result.thinkingLevels,
       availableCommands: result.availableCommands,
       modes: result.modes,
+      currentModeId: result.currentModeId,
       capabilities: entry.summary.capabilities,
     });
   }
@@ -416,6 +417,7 @@ export class SessionHub implements ISessionHub {
         availableCommands:
           result.availableCommands || staging.availableCommands,
         modes: result.modes,
+        currentModeId: result.currentModeId,
       });
       if (Array.isArray(result.configOptions)) staging.replaceConfigOptions(result.configOptions);
       return this.publish(entry, staging);
@@ -588,6 +590,7 @@ export class SessionHub implements ISessionHub {
         availableCommands: session.availableCommands,
         capabilities: session.capabilities,
         modes: session.modes,
+        currentModeId: session.currentModeId,
         createdAt: session.createdAt,
         updatedAt: session.updatedAt,
         status: session.status,
@@ -595,6 +598,13 @@ export class SessionHub implements ISessionHub {
         parentSessionId: session.parentSessionId,
       }];
     });
+  }
+  public async setSessionMode(sessionId: string, modeId: string, agentId?: string): Promise<void> {
+    const session = this.getSession(sessionId, agentId);
+    if (!session) throw new SessionError(sessionId, "Session not found");
+    if (session.setMode) {
+      await session.setMode(modeId);
+    }
   }
   public async closeSession(sessionId: string, agentId?: string) {
     const target = this.resolveAgent(sessionId, agentId);

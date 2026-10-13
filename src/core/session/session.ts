@@ -17,7 +17,7 @@ import type {
   AvailableCommand,
   CompactionEntry,
 } from "../types/session";
-import { parseConfigOptions } from "../protocol/acp-client-adapter";
+import { parseConfigOptions, parseModes, parseCurrentModeId } from "../protocol/acp-client-adapter";
 import type {
   AcpClientAdapter,
   ParsedConfigOptions,
@@ -67,7 +67,8 @@ export interface SessionOptions {
   availableThinkingLevels?: string[];
   availableCommands?: AvailableCommand[];
   capabilities?: any;
-  modes?: Array<{ id: string; name: string }>;
+  modes?: Array<{ id: string; name: string }> | any;
+  currentModeId?: string;
   compactions?: CompactionEntry[];
   adapter: AcpClientAdapter;
   runtimeRevision?: number;
@@ -88,6 +89,7 @@ export interface ISession {
   availableCommands?: AvailableCommand[];
   capabilities?: any;
   modes?: Array<{ id: string; name: string }>;
+  currentModeId?: string;
   compactions?: CompactionEntry[];
   readonly createdAt: number;
   readonly updatedAt: number;
@@ -98,6 +100,7 @@ export interface ISession {
   readonly pendingApproval?: PendingApproval;
 
   getAdapter?(): AcpClientAdapter | undefined;
+  setMode?(modeId: string): Promise<void>;
   requestApproval(
     requestId: string,
     toolTitle: string,
@@ -152,6 +155,7 @@ export class Session implements ISession {
   availableCommands: AvailableCommand[] = [];
   capabilities?: any;
   modes?: Array<{ id: string; name: string }>;
+  currentModeId?: string;
   compactions: CompactionEntry[] = [];
   readonly createdAt: number;
   updatedAt: number;
@@ -236,7 +240,8 @@ export class Session implements ISession {
       ? [...options.availableCommands]
       : [];
     this.capabilities = options.capabilities;
-    this.modes = options.modes ? [...options.modes] : undefined;
+    this.modes = parseModes(options.modes);
+    this.currentModeId = options.currentModeId ?? parseCurrentModeId(options.modes);
     this.compactions = options.compactions ? [...options.compactions] : [];
     this.createdAt = options.createdAt || Date.now();
     this.updatedAt = options.updatedAt || this.createdAt;
@@ -311,6 +316,17 @@ export class Session implements ISession {
     this.availableThinkingLevels = parsed.thinkingLevels ?? [];
     this.updatedAt = Date.now();
     this.emitEvent({ type: "config_option_update", sessionId: this.id, payload: this.serialize() });
+  }
+
+  public async setMode(modeId: string): Promise<void> {
+    if (this.currentModeId === modeId) return;
+    await this.adapter.setSessionMode(this.id, modeId);
+    this.currentModeId = modeId;
+    this.emitEvent({
+      type: "mode_change",
+      sessionId: this.id,
+      payload: { currentModeId: this.currentModeId },
+    });
   }
 
   public async setConfigOption(configId: string, value: string): Promise<void> {
@@ -684,6 +700,7 @@ export class Session implements ISession {
         availableCommands: this.availableCommands,
         capabilities: this.capabilities ?? this.adapter?.getAgentCapabilities?.(),
         modes: this.modes,
+        currentModeId: this.currentModeId,
         compactions: this.compactions,
         createdAt: this.createdAt,
         updatedAt: this.updatedAt,
@@ -745,6 +762,17 @@ export class Session implements ISession {
     const lastMsg = this.messages[this.messages.length - 1];
 
     switch (update.sessionUpdate) {
+      case "current_mode_update": {
+        if (typeof update.currentModeId === "string" && update.currentModeId) {
+          this.currentModeId = update.currentModeId;
+          this.emitEvent({
+            type: "mode_change",
+            sessionId: this.id,
+            payload: { currentModeId: this.currentModeId },
+          });
+        }
+        break;
+      }
       case "config_option_update": {
         if (Array.isArray(update.configOptions)) {
           this.configNotificationEpoch++;

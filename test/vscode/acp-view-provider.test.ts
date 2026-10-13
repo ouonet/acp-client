@@ -676,6 +676,27 @@ describe("T2: AcpViewProvider & Unidirectional IPC Bridge", () => {
     );
   });
 
+  it("should handle SET_SESSION_MODE and forward to active session", async () => {
+    const mockSession = mockSessionHub.getActiveSession() as any;
+    mockSession.setMode = vi.fn().mockResolvedValue(undefined);
+    mockSession.serialize = vi.fn().mockReturnValue({
+      modes: [{ id: "ask", name: "Ask" }, { id: "auto", name: "Auto" }],
+      currentModeId: "ask",
+    });
+
+    provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
+
+    await mockWebview.fireMessage({
+      type: "SET_SESSION_MODE",
+      payload: {
+        sessionId: "sess-active",
+        modeId: "auto",
+      },
+    });
+
+    expect(mockSession.setMode).toHaveBeenCalledWith("auto");
+  });
+
   it("should default session cwd to active workspace folder when creating session without explicit cwd", async () => {
     provider.resolveWebviewView(mockWebviewView, {} as any, {} as any);
 

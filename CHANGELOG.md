@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Interactive Session `ModePicker` in input dock toolbar allowing users to view current mode and switch available modes advertised by ACP agents.
 - Structured tool approval request details (`toolName`, `toolKind`, `toolCallId`, `toolInput`, `toolContent`, `toolLocations`) on `Session` approval requests and `pendingApproval` state.
 - Frosted-glass loading card overlay with animated spinner and status subtitle in the conversation area during Agent connection and Session initialization, replacing the legacy plain text line in the header bar.
 - Clean up `.obsolete` uninstalled extension records and synchronize `extensions.json` in extension link scripts to guarantee IDE recognition.
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Defensively parse ACP `SessionModeState` (`{ currentModeId, availableModes }`) objects and legacy arrays, resolving `options.modes is not iterable` runtime errors when creating sessions for agents like `aharness`.
 - Auto-derive session title from the first prompt message for newly created sessions, and handle standard ACP `session_info_update` notifications to dynamically synchronize title changes with `SessionHub`, webview store, and session history.
 - Adaptive bidirectional popup placement algorithm for the model picker card and options submenu, dynamically adjusting direction and max-height based on viewport clearance.
 - Refined thinking level capsule track geometry and concentric thumb handle, eliminating dual-circle offset and edge clipping.
