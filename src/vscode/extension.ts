@@ -47,8 +47,7 @@ export function createPermissionHandler(
         toolCall?.toolCallId ||
         toolCall?.id ||
         "Tool request";
-      const toolName =
-        toolCall?.name || toolCall?.title || undefined;
+      const toolName = typeof toolCall?.name === "string" && toolCall.name ? toolCall.name : undefined;
       const toolKind =
         typeof toolCall?.kind === "string" ? toolCall.kind : undefined;
       const toolCallId =

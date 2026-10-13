@@ -71,6 +71,11 @@ export function sessionReducer(state: SessionState, action: AppAction): SessionS
     case "PERMISSION_RESOLVED": {
       return { ...state, pendingPermission: undefined };
     }
+    case "ACTION_RESULT": {
+      if (action.payload?.action !== "RESPOND_PERMISSION" || !action.payload.success) return state;
+      if (state.pendingPermission?.requestId !== action.payload.requestId) return state;
+      return { ...state, pendingPermission: undefined };
+    }
     case "TOOL_CALL": {
       if (!state.activeSession) return state;
       const updatedMessages = updateAssistant(state.activeSession.messages || [], (m) => {

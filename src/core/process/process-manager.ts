@@ -14,6 +14,11 @@ import type {
 import type { AgentConfig } from "../types/config";
 import { ProcessError } from "../errors";
 
+/** Windows needs a shell to launch .cmd and .bat shims. */
+export function agentCommandUsesShell(command: string): boolean {
+  return process.platform === "win32" && /\.(cmd|bat)$/i.test(command);
+}
+
 /** Kill the agent and processes it started. Windows has no process groups. */
 export function terminateChild(child: ChildProcess, signal: NodeJS.Signals): void {
   const pid = child.pid;
@@ -134,7 +139,6 @@ export class ProcessManager implements IProcessPort {
 
     this.setStatus(config.id, "starting");
 
-    const isWindows = process.platform === "win32";
     const env = { ...process.env, ...config.env };
 
     if (process.platform === "darwin" || process.platform === "linux") {
@@ -191,7 +195,7 @@ export class ProcessManager implements IProcessPort {
           env,
           cwd: effectiveCwd,
           stdio: ["pipe", "pipe", "pipe"],
-          shell: isWindows && /\.(cmd|bat)$/i.test(config.command),
+          shell: agentCommandUsesShell(config.command),
           detached: process.platform !== "win32",
           windowsHide: true,
         });

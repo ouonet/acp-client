@@ -1,3 +1,4 @@
+import { permissionDecision } from "../../../shared/permission-decision";
 import { formatToolValue } from "./conversation-format";
 
 export interface PermissionRequestProps {
@@ -26,10 +27,7 @@ export function PermissionGate({
   ];
 
   const handleDecision = (opt: { optionId: string; kind: string }) => {
-    let decision: "allow" | "deny" | "always_allow_session" = "allow";
-    if (opt.kind === "deny") decision = "deny";
-    else if (opt.kind === "always" || opt.kind === "always_allow_session") decision = "always_allow_session";
-    onRespond(decision, opt.optionId);
+    onRespond(permissionDecision(opt.kind), opt.optionId);
   };
 
   const paramsText = formatToolValue(request.toolInput);
@@ -85,7 +83,7 @@ export function PermissionGate({
           <button
             key={opt.optionId}
             type="button"
-            className={`btn ${opt.kind === "deny" ? "btn-danger" : "btn-primary"}`}
+            className={`btn ${permissionDecision(opt.kind) === "deny" ? "btn-danger" : "btn-primary"}`}
             data-decision={opt.kind}
             onClick={() => handleDecision(opt)}
           >

@@ -58,6 +58,7 @@ export const window = {
   showInformationMessage: async () => undefined,
   showErrorMessage: async () => undefined,
   showWarningMessage: async () => undefined,
+  showQuickPick: async () => undefined,
   showTextDocument: async (doc: any, options?: any) => ({
     document: doc,
     selection: null,

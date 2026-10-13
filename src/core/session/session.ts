@@ -46,6 +46,19 @@ export interface ToolApprovalDetail {
   toolLocations?: unknown;
 }
 
+function isAllowOptionKind(kind: unknown): kind is string {
+  return typeof kind === "string" &&
+    (kind.startsWith("allow") || kind === "always" || kind === "always_allow_session");
+}
+
+function isAlwaysAllowOptionKind(kind: unknown): boolean {
+  return kind === "allow_always" || kind === "always" || kind === "always_allow_session";
+}
+
+function isRejectOptionKind(kind: unknown): boolean {
+  return kind === "deny" || (typeof kind === "string" && kind.startsWith("reject"));
+}
+
 export interface SessionOptions {
   initialContext?: MessageChunk[];
   id: string;
@@ -526,12 +539,13 @@ export class Session implements ISession {
     detail?: ToolApprovalDetail,
   ): Promise<any> {
     if (!this.attached) return Promise.resolve({ outcome: { outcome: 'cancelled' } });
-    if (this.allowedToolsInSession.has(toolTitle)) {
+    const allowKey = detail?.toolName;
+    if (allowKey && this.allowedToolsInSession.has(allowKey)) {
       const allowOnce = options.find((option) => {
-        const kind = String(option?.kind ?? "");
-        return kind === "allow_once" || (kind.startsWith("allow") && kind !== "allow_always");
+        const kind = option?.kind;
+        return kind === "allow_once" || (isAllowOptionKind(kind) && !isAlwaysAllowOptionKind(kind));
       });
-      const allowOpt = allowOnce ?? options.find((option) => option?.kind?.startsWith("allow"));
+      const allowOpt = allowOnce ?? options.find((option) => isAllowOptionKind(option?.kind));
       if (allowOpt)
         return Promise.resolve({
           outcome: { outcome: "selected", optionId: allowOpt.optionId },
@@ -602,34 +616,28 @@ export class Session implements ISession {
       );
     }
 
-    const { resolve, toolTitle, options: offered } = this.approval;
+    const { resolve, toolName, options: offered } = this.approval;
     const isAllow = decision === "allow" || decision === "always_allow_session";
     const selected =
       options?.optionId !== undefined
         ? offered.find((option) => option.optionId === options.optionId)
         : (offered.find((option) =>
             decision === "always_allow_session"
-              ? option.kind === "allow_always"
-              : option.kind?.startsWith("allow"),
+              ? isAlwaysAllowOptionKind(option.kind)
+              : isAllowOptionKind(option.kind),
           ) ?? (offered.length === 1 ? offered[0] : undefined));
     if (
       (options?.optionId !== undefined &&
-        (!selected ||
-          (decision === "deny" &&
-            !selected.kind?.startsWith("reject") &&
-            selected.kind !== "deny"))) ||
-      (isAllow &&
-        (!selected ||
-          selected.kind?.startsWith("reject") ||
-          selected.kind === "deny")) ||
-      (decision === "always_allow_session" && selected?.kind !== "allow_always")
+        (!selected || (decision === "deny" && !isRejectOptionKind(selected.kind)))) ||
+      (isAllow && (!selected || !isAllowOptionKind(selected.kind))) ||
+      (decision === "always_allow_session" && !isAlwaysAllowOptionKind(selected?.kind))
     ) {
       throw new SessionError(this.id, "Invalid permission option");
     }
     this.approval = undefined;
 
-    if (decision === "always_allow_session") {
-      this.allowedToolsInSession.add(toolTitle);
+    if (decision === "always_allow_session" && toolName) {
+      this.allowedToolsInSession.add(toolName);
     }
 
     this.setStatus("streaming");

@@ -199,7 +199,7 @@ describe("T2: Three-Tier Permission Policy Gate & Session Whitelisting", () => {
         name: "Always Allow in Session",
         kind: "allow_always",
       },
-    ]);
+    ], { toolName: "fs/writeFile" });
 
     expect(session.status).toBe("waiting_approval");
     await session.respondPermission("req-1", "always_allow_session", {
@@ -211,7 +211,7 @@ describe("T2: Three-Tier Permission Policy Gate & Session Whitelisting", () => {
     // 2. Second request for same tool -> auto approves without waiting_approval
     const secondPromise = session.requestApproval("req-2", "fs/writeFile", [
       { optionId: "opt-allow", name: "Allow Once", kind: "allow_once" },
-    ]);
+    ], { toolName: "fs/writeFile" });
 
     // Should NOT enter waiting_approval
     expect(session.status).not.toBe("waiting_approval");
@@ -219,10 +219,72 @@ describe("T2: Three-Tier Permission Policy Gate & Session Whitelisting", () => {
     expect(secondResult.outcome.outcome).toBe("selected");
   });
 
+  it("does not auto-approve a different tool that reuses the title", async () => {
+    const first = session.requestApproval(
+      "first",
+      "Read file",
+      [{ optionId: "always", name: "Always", kind: "allow_always" }],
+      { toolName: "read" },
+    );
+    await session.respondPermission("first", "always_allow_session", { optionId: "always" });
+    await first;
+
+    const second = session.requestApproval(
+      "second",
+      "Read file",
+      [{ optionId: "once", name: "Once", kind: "allow_once" }],
+      { toolName: "shell" },
+    );
+    expect(session.status).toBe("waiting_approval");
+    await session.cancel();
+    await expect(second).resolves.toEqual({ outcome: { outcome: "cancelled" } });
+  });
+
+  it("does not auto-approve when the tool name or option kind is missing", async () => {
+    const first = session.requestApproval(
+      "first",
+      "Read file",
+      [{ optionId: "always", name: "Always", kind: "allow_always" }],
+      { toolName: "read" },
+    );
+    await session.respondPermission("first", "always_allow_session", { optionId: "always" });
+    await first;
+
+    const unnamed = session.requestApproval("unnamed", "Read file", [
+      { optionId: "once", name: "Once", kind: "allow_once" },
+    ]);
+    expect(session.status).toBe("waiting_approval");
+    await session.cancel();
+    await unnamed;
+
+    const remembered = session.requestApproval(
+      "remembered",
+      "Read something else",
+      [{ optionId: "go", name: "Run" }],
+      { toolName: "read" },
+    );
+    expect(session.status).toBe("waiting_approval");
+    await session.cancel();
+    await remembered;
+  });
+
+  it.each(["always", "always_allow_session"])("accepts %s as a session-allow option", async (kind) => {
+    const first = session.requestApproval("alias-first", "Write", [
+      { optionId: "always", name: "Always", kind },
+    ], { toolName: "fs/writeFile" });
+    await session.respondPermission("alias-first", "always_allow_session", { optionId: "always" });
+    await first;
+
+    const second = session.requestApproval("alias-second", "Write", [
+      { optionId: "once", name: "Once", kind: "allow_once" },
+    ], { toolName: "fs/writeFile" });
+    await expect(second).resolves.toEqual({ outcome: { outcome: "selected", optionId: "once" } });
+  });
+
   it("auto-approves allow_once when allow_always is listed first", async () => {
     const first = session.requestApproval("first", "Write", [
       { optionId: "always", name: "Always", kind: "allow_always" },
-    ]);
+    ], { toolName: "Write" });
     await session.respondPermission("first", "always_allow_session", {
       optionId: "always",
     });
@@ -231,7 +293,7 @@ describe("T2: Three-Tier Permission Policy Gate & Session Whitelisting", () => {
     const second = session.requestApproval("second", "Write", [
       { optionId: "always", name: "Always", kind: "allow_always" },
       { optionId: "once", name: "Once", kind: "allow_once" },
-    ]);
+    ], { toolName: "Write" });
     await expect(second).resolves.toEqual({
       outcome: { outcome: "selected", optionId: "once" },
     });

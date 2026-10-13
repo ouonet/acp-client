@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Native `@acp` permission requests use VS Code quick picks with ACP allow/reject option semantics.
 - Interactive Session `ModePicker` in input dock toolbar allowing users to view current mode and switch available modes advertised by ACP agents.
 - Structured tool approval request details (`toolName`, `toolKind`, `toolCallId`, `toolInput`, `toolContent`, `toolLocations`) on `Session` approval requests and `pendingApproval` state.
 - Frosted-glass loading card overlay with animated spinner and status subtitle in the conversation area during Agent connection and Session initialization, replacing the legacy plain text line in the header bar.
@@ -21,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Keep the permission gate visible until the extension host confirms a successful response, and match remembered session allows by programmatic tool name.
+- Refuse workspace text reads larger than 1 MB before loading bytes.
+- Apply Windows `.cmd` and `.bat` shell handling consistently to isolated connection tests.
+- Warn and fail guarded Diff application when the editor rejects the replacement after a concurrent change.
 - Defensively parse ACP `SessionModeState` (`{ currentModeId, availableModes }`) objects and legacy arrays, resolving `options.modes is not iterable` runtime errors when creating sessions for agents like `aharness`.
 - Auto-derive session title from the first prompt message for newly created sessions, and handle standard ACP `session_info_update` notifications to dynamically synchronize title changes with `SessionHub`, webview store, and session history.
 - Preserve Windows drive, UNC, spaced, and trailing-separator paths when parsing and formatting Agent command arguments.

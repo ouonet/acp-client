@@ -4,7 +4,9 @@
 
 import * as vscode from "vscode";
 import type { ISessionHub } from "../core/session/session-hub";
+import type { ISession } from "../core/session/session";
 import type { IStoragePort } from "../core/ports";
+import { permissionDecision } from "../shared/permission-decision";
 
 export interface ChatParticipantOptions {
   sessionHub: ISessionHub;
@@ -78,6 +80,8 @@ export class AcpChatParticipant implements vscode.Disposable {
         if (text) stream.markdown(text);
       } else if (event.type === "tool_call") {
         stream.progress(`Executing tool: ${event.payload?.name || event.payload?.title || "tool"}...`);
+      } else if (event.type === "permission_request") {
+        void this.answerPermission(session, event.payload);
       }
     });
 
@@ -97,5 +101,27 @@ export class AcpChatParticipant implements vscode.Disposable {
 
   public dispose(): void {
     this.participant.dispose();
+  }
+
+  private async answerPermission(session: ISession, payload: any): Promise<void> {
+    const options = Array.isArray(payload?.options) ? payload.options : [];
+    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { optionId: string; decisionKind: string }>(
+      options.map((option: any) => ({
+        label: String(option?.name || option?.optionId || "Option"),
+        description: typeof option?.kind === "string" ? option.kind : undefined,
+        optionId: String(option?.optionId || ""),
+        decisionKind: typeof option?.kind === "string" ? option.kind : "",
+      })),
+      { title: payload?.toolTitle || "Permission requested", ignoreFocusOut: true },
+    );
+    try {
+      if (!picked) {
+        await session.respondPermission(payload?.requestId, "deny");
+        return;
+      }
+      await session.respondPermission(payload?.requestId, permissionDecision(picked.decisionKind), { optionId: picked.optionId });
+    } catch {
+      // The sidebar can answer the same request first.
+    }
   }
 }

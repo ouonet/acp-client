@@ -165,4 +165,43 @@ describe("T5: VS Code Native Chat Participant (@acp)", () => {
       expect(mockSession.cancel).toHaveBeenCalled();
     }
   });
+
+  it("asks with a quick pick and returns the selected permission option", async () => {
+    mockSession.respondPermission = vi.fn().mockResolvedValue(undefined);
+    mockSession.prompt = vi.fn().mockImplementation(async () => {
+      for (const listener of eventListeners) {
+        listener({
+          type: "permission_request",
+          payload: {
+            requestId: "perm-1",
+            toolTitle: "Run shell",
+            options: [
+              { optionId: "reject", name: "Reject", kind: "reject_once" },
+              { optionId: "once", name: "Allow once", kind: "allow_once" },
+            ],
+          },
+        });
+      }
+    });
+    vi.spyOn(vscode.window, "showQuickPick").mockResolvedValue({
+      label: "Reject",
+      optionId: "reject",
+      decisionKind: "reject_once",
+    } as any);
+
+    const participant = new AcpChatParticipant({
+      sessionHub: mockSessionHub,
+      storageManager: mockStorageManager,
+    });
+    await participant.handleRequest(
+      { prompt: "run tests", command: undefined } as any,
+      {} as any,
+      { markdown: vi.fn(), progress: vi.fn() } as any,
+      { onCancellationRequested: vi.fn() } as any,
+    );
+    await Promise.resolve();
+
+    expect(vscode.window.showQuickPick).toHaveBeenCalled();
+    expect(mockSession.respondPermission).toHaveBeenCalledWith("perm-1", "deny", { optionId: "reject" });
+  });
 });

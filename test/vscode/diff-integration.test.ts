@@ -73,6 +73,23 @@ describe("T1: Diff Integration with VS Code Extension", () => {
     );
   });
 
+  it("reports failure when the editor refuses the diff", async () => {
+    const warn = vi.spyOn(vscode.window, "showWarningMessage").mockResolvedValue("Apply" as any);
+    (mockWorkspaceAdapter.applyFileEdit as any).mockResolvedValue(false);
+    const handleAction = (provider as any).handleAction.bind(provider);
+
+    await expect(handleAction({
+      type: "APPLY_FILE_DIFF",
+      payload: {
+        filePath: "/workspace/src/example.ts",
+        content: "new modified content",
+        originalContent: "original file content",
+      },
+    })).rejects.toThrow(/changed while confirming/);
+    expect(warn).toHaveBeenCalledWith("File /workspace/src/example.ts changed while confirming.");
+    expect(mockWorkspaceAdapter.writeFile).not.toHaveBeenCalled();
+  });
+
   it("should call vscode.commands.executeCommand with vscode.diff on OPEN_DIFF_EDITOR", async () => {
     const executeCommandSpy = vi.spyOn(vscode.commands, "executeCommand");
     const handleAction = (provider as any).handleAction.bind(provider);

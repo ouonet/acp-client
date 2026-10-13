@@ -30,7 +30,11 @@ export class WorkspaceHandler {
     }
 
     if (adapter.applyFileEdit) {
-      await adapter.applyFileEdit(filePath, originalContent, content);
+      const applied = await adapter.applyFileEdit(filePath, originalContent, content);
+      if (!applied) {
+        vscode.window.showWarningMessage(`File ${filePath} changed while confirming.`);
+        throw new Error(`File ${filePath} changed while confirming.`);
+      }
     } else if (adapter.writeFile) {
       await adapter.writeFile(filePath, content);
     }

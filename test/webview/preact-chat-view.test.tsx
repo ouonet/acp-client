@@ -134,6 +134,59 @@ describe("T6: Preact ChatView, Turns, Thinking, Tools & PermissionGate", () => {
     );
   });
 
+  it("sends reject_once as deny and keeps the gate until the host accepts", async () => {
+    store.dispatch({
+      type: "PERMISSION_REQUEST",
+      payload: {
+        sessionId: "sess-1",
+        requestId: "req-reject",
+        toolTitle: "Run shell",
+        options: [
+          { optionId: "once", name: "Allow once", kind: "allow_once" },
+          { optionId: "always", name: "Always allow", kind: "allow_always" },
+          { optionId: "reject", name: "Reject", kind: "reject_once" },
+        ],
+      },
+    });
+    render(
+      <StoreProvider store={store}>
+        <ActionProvider onAction={onAction}>
+          <ChatView />
+        </ActionProvider>
+      </StoreProvider>,
+      container,
+    );
+    await new Promise((r) => setTimeout(r, 20));
+
+    (container.querySelector('[data-decision="reject_once"]') as HTMLButtonElement).click();
+    expect(onAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ requestId: "req-reject", decision: "deny", optionId: "reject" }),
+      }),
+    );
+    (container.querySelector('[data-decision="allow_always"]') as HTMLButtonElement).click();
+    expect(onAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ decision: "always_allow_session", optionId: "always" }),
+      }),
+    );
+    expect(container.querySelector(".permission-gate")).not.toBeNull();
+
+    store.dispatch({
+      type: "ACTION_RESULT",
+      payload: { requestId: "req-reject", action: "RESPOND_PERMISSION", success: false, error: "Invalid permission option" },
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(container.querySelector(".permission-gate")).not.toBeNull();
+
+    store.dispatch({
+      type: "ACTION_RESULT",
+      payload: { requestId: "req-reject", action: "RESPOND_PERMISSION", success: true },
+    });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(container.querySelector(".permission-gate")).toBeNull();
+  });
+
   it("ChatView renders active streaming text in real time", async () => {
     render(
       <StoreProvider store={store}>

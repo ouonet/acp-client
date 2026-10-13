@@ -19,6 +19,9 @@ export interface VsCodeWorkspaceAdapterOptions {
   ) => Promise<{ stdout: string; stderr: string; exitCode: number }>;
 }
 
+// shortcut: 1 MB cap; raise it when an agent must read a larger file through the client.
+const MAX_READ_BYTES = 1_000_000;
+
 export class VsCodeWorkspaceAdapter implements IWorkspacePort {
   private readonly fs: {
     readFile(uri: vscode.Uri): Thenable<Uint8Array>;
@@ -38,6 +41,8 @@ export class VsCodeWorkspaceAdapter implements IWorkspacePort {
 
   public async readFile(path: string): Promise<string> {
     const uri = vscode.Uri.file(path);
+    const stat = await vscode.workspace.fs.stat(uri);
+    if (stat.size > MAX_READ_BYTES) throw new Error(`File exceeds 1 MB (${stat.size} bytes)`);
     const bytes = await this.fs.readFile(uri);
     return new TextDecoder().decode(bytes);
   }

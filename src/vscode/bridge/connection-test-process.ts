@@ -1,7 +1,7 @@
 import { spawn, type ChildProcess } from "child_process";
 import type { AgentConfig } from "../../core/types/config";
 import { AcpClientAdapter } from "../../core/protocol/acp-client-adapter";
-import { terminateChild } from "../../core/process/process-manager";
+import { agentCommandUsesShell, terminateChild } from "../../core/process/process-manager";
 import { CLIENT_VERSION } from "../../version";
 
 const HANDSHAKE_TIMEOUT_MS = 60_000;
@@ -40,7 +40,7 @@ export async function initializeTestProcess(config: AgentConfig, signal: AbortSi
   try {
     if (signal.aborted) throw new Error("Connection test cancelled");
     child = spawn(config.command, config.args ?? [], {
-      env: { ...process.env, ...config.env }, cwd: resolveConfigCwd(config.cwd), stdio: ["pipe", "pipe", "pipe"], shell: false,
+      env: { ...process.env, ...config.env }, cwd: resolveConfigCwd(config.cwd), stdio: ["pipe", "pipe", "pipe"], shell: agentCommandUsesShell(config.command),
       detached: process.platform !== "win32", windowsHide: true,
     });
     const failure = new Promise<never>((_, reject) => {

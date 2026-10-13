@@ -49,7 +49,6 @@ export function ChatView() {
         optionId,
       },
     });
-    dispatch({ type: "PERMISSION_RESOLVED" });
   };
 
   const { agentConfigs, selectedAgentId } = state.agent;
